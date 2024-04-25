@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+	  <OutputType>Library</OutputType>
+	  <ImplicitUsings>enable</ImplicitUsings>
+	  <Nullable>enable</Nullable>
+	  <!--<GenerateDocumentationFile>True</GenerateDocumentationFile>-->
+	  <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <Authors />
+	  <Description>小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。
+Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
+	  </Description>
+	  <PackageReleaseNotes>小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。
+Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
+	  </PackageReleaseNotes>
+	  <RepositoryUrl>https://github.com/TripleView/MiHome.Net</RepositoryUrl>
+	  <RepositoryType>github</RepositoryType>
+	  <Copyright>MIT</Copyright>
+	  <IsPackable>true</IsPackable>
+	  <PackageProjectUrl>https://github.com/TripleView/MiHome.Net</PackageProjectUrl>
+	  <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
+	  <Version>1.0.0</Version>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\ReadMe.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+    <PackageReference Include="SummerBoot" Version="2.1.3" />
+  </ItemGroup>
+
+</Project>
