@@ -17,7 +17,7 @@ net 6,net 8
  hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
  {
      x.UserName = "<这里填写米家账号>";
-     x.Password = "<这里填写米家米家>";
+     x.Password = "<这里填写米家密码>";
  }));
  var host = hostBuilder.Build();
  var miHomeDriver = host.Services.GetService<IMiHomeDriver>();
