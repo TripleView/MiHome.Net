@@ -251,7 +251,15 @@ public class MIotCloud : IMiotCloud
                 result2 = result2.Replace(startValue, "");
 
                 var result2Obj = JsonConvert.DeserializeObject<ServiceLoginAuth2OutputDto>(result2);
+                if (result2Obj == null)
+                {
+                    throw new Exception("获取登陆信息失败");
+                }
 
+                if (result2Obj.notificationUrl.HasText() && result2Obj.notificationUrl.Contains("verifyPhone"))
+                {
+                    throw new Exception("请先登陆米家app校验手机");
+                }
                 //var clientSign = "";
                 //var temp = $"nonce={result2Obj.nonce}&{result2Obj.ssecurity}";
                 //var gearr = Encoding.UTF8.GetBytes(temp);
