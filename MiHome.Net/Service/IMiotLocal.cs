@@ -1,8 +1,6 @@
 ﻿using MiHome.Net.Miio;
 using Newtonsoft.Json.Linq;
-using SummerBoot.Core;
 using System.Net;
-using YamlDotNet.Core.Tokens;
 
 namespace MiHome.Net.Service;
 
@@ -35,7 +33,6 @@ public interface IMiotLocal
 }
 
 
-[AutoRegister(typeof(IMiotLocal))]
 public class MiotLocal : IMiotLocal
 {
  

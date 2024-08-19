@@ -2,13 +2,13 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using MiHome.Net.Cache;
 using MiHome.Net.Dto;
 using MiHome.Net.FeignService;
 using MiHome.Net.Utils;
 using Newtonsoft.Json;
-using SummerBoot.Cache;
-using SummerBoot.Core;
-using SummerBoot.Feign;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 
 namespace MiHome.Net.Service;
 /// <summary>
@@ -62,26 +62,27 @@ public interface IMiotCloud
     Task<string> CallActionAsync(CallActionInputDto callActionParam);
 }
 
-[AutoRegister(typeof(IMiotCloud))]
 public class MIotCloud : IMiotCloud
 {
     private readonly IMiotCloudService miotCloudService;
     private readonly IXiaoMiLoginService xiaoMiLoginService;
     private readonly IXiaoMiControlDevicesService xiaoMiControlDevicesService;
-    private readonly IFeignUnitOfWork fegiFeignUnitOfWork;
-    private readonly ICache cache;
+    private readonly ICache  cache;
     private readonly ILogger<MiHomeDriver> logger;
     private readonly MiHomeAccountOption option;
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly IMiotCloudService iMiotCloudService;
 
-    public MIotCloud(IMiotCloudService miotCloudService, IXiaoMiLoginService xiaoMiLoginService, IXiaoMiControlDevicesService xiaoMiControlDevicesService, IFeignUnitOfWork fegiFeignUnitOfWork, ICache cache, ILogger<MiHomeDriver> logger, MiHomeAccountOption option)
+    public MIotCloud(IMiotCloudService miotCloudService, IXiaoMiLoginService xiaoMiLoginService, IXiaoMiControlDevicesService xiaoMiControlDevicesService, ICache cache, ILogger<MiHomeDriver> logger, MiHomeAccountOption option, IHttpClientFactory httpClientFactory, IMiotCloudService iMiotCloudService)
     {
         this.miotCloudService = miotCloudService;
         this.xiaoMiLoginService = xiaoMiLoginService;
         this.xiaoMiControlDevicesService = xiaoMiControlDevicesService;
-        this.fegiFeignUnitOfWork = fegiFeignUnitOfWork;
         this.cache = cache;
         this.logger = logger;
         this.option = option;
+        this.httpClientFactory = httpClientFactory;
+        this.iMiotCloudService = iMiotCloudService;
     }
     public async Task<MiotSpec> GetDeviceSpec(string model)
     {
@@ -92,7 +93,7 @@ public class MIotCloud : IMiotCloud
     private async Task<MiotSpec> GetModelSchema(string model)
     {
         var allInstances = await GetAllInstancesAsync();
-        var modelInfo = allInstances.Instances.Where(it => it.Model == model).MaxBy(it => it.Version);
+        var modelInfo = allInstances.Instances.Where(it => it.Model == model).OrderByDescending(it => it.Version).FirstOrDefault();
         if (modelInfo == null)
         {
             throw new Exception($"Device(model:{model} ) information not found");
@@ -121,7 +122,7 @@ public class MIotCloud : IMiotCloud
                 await Task.Delay(50);
             }
 
-            var instances = await miotCloudService.GetAllInstancesAsync();
+            var instances = await iMiotCloudService.GetAllInstancesAsync();
             using var sw = new StreamWriter(fi.OpenWrite());
             await sw.WriteAsync(instances.ToJson());
             return instances;
@@ -160,7 +161,7 @@ public class MIotCloud : IMiotCloud
     /// <returns></returns>
     private async Task StopControlDeviceCookieAsync()
     {
-        fegiFeignUnitOfWork.StopCookie();
+
     }
 
     /// <summary>
@@ -171,18 +172,19 @@ public class MIotCloud : IMiotCloud
     {
         var loginInfoDto = await GetLoginInfoAsync();
 
-        fegiFeignUnitOfWork.BeginCookie();
-        var apiUrl = "https://api.io.mi.com/app/";
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("userId", loginInfoDto.UserId));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("serviceToken", loginInfoDto.ServiceToken));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("yetAnotherServiceToken", loginInfoDto.ServiceToken));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("is_daylight", "0"));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("channel", "MI_APP_STORE"));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("dst_offset", "0"));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("locale", "zh_CN"));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("timezone", "GMT+08:00"));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("sdkVersion", "3.9"));
-        fegiFeignUnitOfWork.AddCookie(apiUrl, new Cookie("deviceId", loginInfoDto.DeviceId));
+        var dic = new Dictionary<string, string>();
+        dic.Add("userId", loginInfoDto.UserId);
+        dic.Add("serviceToken", loginInfoDto.ServiceToken);
+        dic.Add("yetAnotherServiceToken", loginInfoDto.ServiceToken);
+        dic.Add("is_daylight", "0");
+        dic.Add("channel", "MI_APP_STORE");
+        dic.Add("dst_offset", "0");
+        dic.Add("locale", "zh_CN");
+        dic.Add("timezone", "GMT+08:00");
+        dic.Add("sdkVersion", "3.9");
+        dic.Add("deviceId", loginInfoDto.DeviceId);
+        await xiaoMiControlDevicesService.SetCookie(dic);
+
     }
 
     /// <summary>
@@ -204,6 +206,7 @@ public class MIotCloud : IMiotCloud
             await cache.SetValueWithAbsoluteAsync("loginInfo", loginInfoDto, TimeSpan.FromHours(6));
         }
 
+        //var c = loginInfoDto.ToJson();
         return loginInfoDto;
     }
 
@@ -221,12 +224,15 @@ public class MIotCloud : IMiotCloud
             throw new Exception("UserName or Password is empty!");
         }
 
-        fegiFeignUnitOfWork.BeginCookie();
-
         var clientId = GetClientId();
         var url = "https://account.xiaomi.com/";
-        fegiFeignUnitOfWork.AddCookie(url, new Cookie("sdkVersion", "3.9"));
-        fegiFeignUnitOfWork.AddCookie(url, new Cookie("deviceId", clientId));
+
+
+        var dic = new Dictionary<string, string>();
+        dic.Add("sdkVersion", "3.9");
+        dic.Add("deviceId", clientId);
+
+        await xiaoMiLoginService.SetCookie(dic);
 
         var result = await xiaoMiLoginService.ServiceLogin(clientId);
         var startValue = "&&&START&&&";
@@ -251,17 +257,20 @@ public class MIotCloud : IMiotCloud
                 result2 = result2.Replace(startValue, "");
 
                 var result2Obj = JsonConvert.DeserializeObject<ServiceLoginAuth2OutputDto>(result2);
+                if (result2Obj == null)
+                {
+                    throw new Exception("获取登陆信息失败");
+                }
 
-                //var clientSign = "";
-                //var temp = $"nonce={result2Obj.nonce}&{result2Obj.ssecurity}";
-                //var gearr = Encoding.UTF8.GetBytes(temp);
-                //var geresult = gearr.ToSha1ThenBase64();
-                //result2Obj.location = result2Obj.location + $"&clientSign={geresult}";
-
+                if (result2Obj.notificationUrl.HasText() && result2Obj.notificationUrl.Contains("verifyPhone"))
+                {
+                    throw new Exception("请先登陆米家app校验手机");
+                }
+                
                 var result3 = await xiaoMiLoginService.Login(result2Obj.location);
                 result3.EnsureSuccessStatusCode();
                 var cookies = result3.Headers.Where(it => it.Key == "Set-Cookie").SelectMany(it => it.Value).ToList()
-                    .Select(it => it.Split(";")[0]).ToList();
+                    .Select(it => it.Split(';')[0]).ToList();
                 if (cookies.Count == 0)
                 {
                     throw new Exception("Get ServiceToken Error");
@@ -269,7 +278,7 @@ public class MIotCloud : IMiotCloud
 
                 var serviceToken = cookies.FirstOrDefault(it => it.StartsWith("serviceToken"))
                     ?.Replace("serviceToken=", "");
-                fegiFeignUnitOfWork.StopCookie();
+
                 var loginInfo = new LoginInfoDto()
                 {
                     DeviceId = clientId,
@@ -290,9 +299,11 @@ public class MIotCloud : IMiotCloud
     {
         var letters = "ABCDEF";
         var resultList = new List<string>();
+        var Random = new Random();
         for (int i = 0; i < 13; i++)
         {
-            var index = RandomNumberGenerator.GetInt32(0, 6);
+            var index = Random.Next(0, 6);
+            //var index = RandomNumberGenerator.GetInt32(0, 6);
             var letter = letters[index].ToString();
             resultList.Add(letter);
         }
@@ -315,17 +326,28 @@ public class MIotCloud : IMiotCloud
         dat["data"] = data.ToJson();
 
         var nonce = CalculateNonce();
+        //nonce = "1Xg55NnRgGYBtm/A";
         var signedNonce = SignedNonce(ssecurity, nonce);
         dat["rc4_hash__"] = Sha1Sign(url, dat, signedNonce, method);
+        var newDat = new Dictionary<string, string>();
         foreach (var pair in dat)
         {
-            dat[pair.Key] = EncryptData(signedNonce, pair.Value);
+            newDat.Add(pair.Key, EncryptData(signedNonce, pair.Value));
+          
         }
+
+        foreach (var pair in newDat)
+        {
+            dat[pair.Key] = pair.Value;
+        }
+
+
 
         dat["signature"] = Sha1Sign(url, dat, signedNonce, method);
         dat["_nonce"] = nonce;
         dat["ssecurity"] = ssecurity;
         dat["signedNonce"] = signedNonce;
+        //var c = dat.ToJson();
         return dat;
     }
 
@@ -414,10 +436,13 @@ public class MIotCloud : IMiotCloud
             Rnd.GetBytes(firstByteArray);
         }
 
-        var secondByteArr = ((int)(SbUtil.CurrentSeconds() / 60)).ToBytesBig(4);
+        var seconds = DateTimeUtils.CurrentSeconds();
+
+        var secondByteArr = ((int)(seconds / 60)).ToBytesBig(4);
         var finalByteArr = firstByteArray.Concat(secondByteArr).ToArray();
         //Base64 encode and then return
-        return Convert.ToBase64String(finalByteArr);
+        var result= Convert.ToBase64String(finalByteArr);
+        return result;
     }
 
     private string ConvertStringtoMD5(string strword)
@@ -445,7 +470,12 @@ public class MIotCloud : IMiotCloud
             Get_split_device = false,
             Support_smart_home = true
         };
+        //loginInfoDto.Ssecurity = "zDTRUvzVmlrNSIiaT4Z1/w==";
         var param = GetRc4Params("POST", "https://api.io.mi.com/app/home/device_list", inputDto, loginInfoDto.Ssecurity);
+        //var cffff = param.ToJson();
+        //param = JsonConvert.DeserializeObject<Dictionary<string, string>>(
+        //    "{\"data\":\"G2ld8LvUP1J8RSDRz7S3k24duYX/6h/lQhlgUQwTzwwlNHvJcezcIP8+K6odtKRJ1HYK0vfSlX25UefZFAtNxi2b5c7zwv0kjJK1oGeXKKWY5kYzQmTRqOWqIiqZ/OI=\",\"rc4_hash__\":\"FHlC2uCxBG8+YXXTt76LoWtI5pnE2TuTMDlMGA==\",\"signature\":\"k5MD2qRO1+UWdyP2UYk0Kfi3Fmk=\",\"_nonce\":\"1Xg55NnRgGYBtm/A\",\"ssecurity\":\"0vk9nAzVavNMvnahav+S8g==\",\"signedNonce\":\"iJhbwk03C3ykSqqyNjRHoDwdk34QjIhwm14Zkdv1l5E=\"}");
+
         var signedNonce = param["signedNonce"];
         var deviceListResultString = await xiaoMiControlDevicesService.GetDeviceList(param);
         await StopControlDeviceCookieAsync();

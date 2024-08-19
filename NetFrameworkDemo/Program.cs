@@ -1,29 +1,35 @@
-﻿using System.Net;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using MiHome.Net.Dto;
 using MiHome.Net.Middleware;
 using MiHome.Net.Miio;
 using MiHome.Net.Service;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Demo
+namespace NetFrameworkDemo
 {
     internal class Program
     {
-        public static async Task Main(string[] args)
+
+        public static void Main(string[] args)
         {
-    
+            InternalMain().GetAwaiter().GetResult();
+
+        }
+
+        static async Task InternalMain()
+        {
             var hostBuilder = Host.CreateDefaultBuilder();
             //添加小米米家的驱动服务，需要小米账号和密码
             hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
             {
                 x.UserName = "<米家账号>";
                 x.Password = "<米家密码>";
-     
             }));
             var host = hostBuilder.Build();
 
-            var miHomeDriver = host.Services.GetService<IMiHomeDriver>();
+            var miHomeDriver = (IMiHomeDriver)host.Services.GetService(typeof(IMiHomeDriver));
             //列出家庭里所有的智能家居设备
             var deviceList = await miHomeDriver.Cloud.GetDeviceListAsync();
             //通过米家app里自己设置的智能家居名称找出自己想要操作的智能家居设备
@@ -34,7 +40,6 @@ namespace Demo
             var result = await miHomeDriver.Cloud.GetDeviceSpec(moonLight.Model);
             var result2 = await miHomeDriver.Cloud.GetDeviceSpec(xiaoAi.Model);
             var result3 = await miHomeDriver.Cloud.GetDeviceSpec(cp5pro.Model);
-
 
             //使用本地方式调用Gosund智能排插CP5 Pro中4个开关中第3个开关的toggle方法
             var r10 = await miHomeDriver.Local.CallActionAsync(cp5pro.LocalIp, cp5pro.Token, new CallActionPayload()
@@ -53,7 +58,13 @@ namespace Demo
                 In = new List<string>() { }
             });
 
-          
+            //使用本地方式调用Gosund智能排插CP5 Pro中4个开关中第3个开关的toggle方法
+            //var r10 = await miHomeDriver.Local.CallActionAsync(cp5pro.LocalIp, cp5pro.Token, new CallActionPayload()
+            //{
+            //    Siid = 5,
+            //    Aiid = 1,
+            //    In = new List<string>() { }
+            //});
 
             //使用小爱音箱Play增强版播放我们的自定义文字
             var r9 = await miHomeDriver.Cloud.CallActionAsync(new CallActionInputDto()

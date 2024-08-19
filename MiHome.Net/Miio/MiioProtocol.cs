@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using MiHome.Net.Utils;
 using Newtonsoft.Json;
-using SummerBoot.Core;
 
 namespace MiHome.Net.Miio;
 

@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using MiHome.Net.Cache;
 using MiHome.Net.Dto;
+using MiHome.Net.FeignService;
 using MiHome.Net.Miio;
 using MiHome.Net.Service;
-using SummerBoot.Core;
 
 namespace MiHome.Net.Middleware;
 
@@ -12,12 +14,16 @@ public static class MiHomeDriverExtension
     {
         var accountOption = new MiHomeAccountOption();
         option(accountOption);
-        services.AddSummerBoot();
-        services.AddSummerBootFeign();
-        services.AddSummerBootCache(it =>
-        {
-            it.UseMemory();
-        });
+        services.AddHttpClient();
+        services.AddScoped<IMiotCloudService, MiotCloudService>();
+        services.AddScoped<IXiaoMiLoginService, XiaoMiLoginService>();
+        services.AddScoped<IXiaoMiControlDevicesService, XiaoMiControlDevicesService>();
+        services.AddMemoryCache();
+        services.TryAddScoped<ICacheDeserializer, JsonCacheDeserializer>();
+        services.TryAddScoped<ICacheSerializer, JsonCacheSerializer>();
+        services.TryAddScoped<ICache, MemoryCache>();
+        services.AddScoped<IMiotLocal, MiotLocal>();
+        services.AddScoped<IMiotCloud, MIotCloud>();
         services.AddSingleton<MiHomeAccountOption>(it=>accountOption);
         services.AddSingleton<MiioProtocol>();
         services.AddScoped<IMiHomeDriver, MiHomeDriver>();

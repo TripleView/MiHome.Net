@@ -5,7 +5,9 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiHome.Net", "MiHome.Net\MiHome.Net.csproj", "{C2A8F39C-F2BB-47E7-8A65-5CF32257DB9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{3C0750DD-B823-48EC-BD4F-A9F8FF8ED146}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo", "Demo\Demo.csproj", "{3C0750DD-B823-48EC-BD4F-A9F8FF8ED146}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetFrameworkDemo", "NetFrameworkDemo\NetFrameworkDemo.csproj", "{2408C8B3-E7E3-4BEF-B6B6-14FD3E7CD419}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{3C0750DD-B823-48EC-BD4F-A9F8FF8ED146}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C0750DD-B823-48EC-BD4F-A9F8FF8ED146}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C0750DD-B823-48EC-BD4F-A9F8FF8ED146}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2408C8B3-E7E3-4BEF-B6B6-14FD3E7CD419}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2408C8B3-E7E3-4BEF-B6B6-14FD3E7CD419}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2408C8B3-E7E3-4BEF-B6B6-14FD3E7CD419}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2408C8B3-E7E3-4BEF-B6B6-14FD3E7CD419}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

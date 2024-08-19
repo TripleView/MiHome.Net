@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
+using MiHome.Net.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using SummerBoot.Core;
 
 namespace MiHome.Net.Miio;
 
@@ -112,7 +112,7 @@ public class Command
 
     private byte[] Decrypt(byte[] body)
     {
-        if (TokenBytes == null || TokenBytes.Length == 0)
+        if (TokenBytes == null || TokenBytes.Length == 0||body.Length==0)
         {
             return body;
         }

@@ -6,9 +6,7 @@ using MiHome.Net.Dto;
 using MiHome.Net.FeignService;
 using MiHome.Net.Utils;
 using Newtonsoft.Json;
-using SummerBoot.Cache;
-using SummerBoot.Core;
-using SummerBoot.Feign;
+
 
 namespace MiHome.Net.Service;
 
@@ -23,7 +21,6 @@ public interface IMiHomeDriver
 
 }
 
-[AutoRegister(typeof(IMiHomeDriver))]
 public class MiHomeDriver : IMiHomeDriver
 {
 

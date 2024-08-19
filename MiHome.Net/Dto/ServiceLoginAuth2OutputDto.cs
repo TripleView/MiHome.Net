@@ -12,4 +12,6 @@ public class ServiceLoginAuth2OutputDto
 
     public string code { get; set; }
     public string nonce { get; set; }
+
+    public string notificationUrl { get; set; }
 }

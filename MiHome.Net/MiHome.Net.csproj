@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+	  <TargetFrameworks>net6.0;net8.0;netstandard2.0</TargetFrameworks>
 	  <OutputType>Library</OutputType>
 	  <ImplicitUsings>enable</ImplicitUsings>
 	  <Nullable>enable</Nullable>
@@ -9,11 +9,12 @@
 	  <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <Authors />
-	  <Description>小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。
-Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
+	  <Description>小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。AOT版本
+Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally,AOT version
 	  </Description>
-	  <PackageReleaseNotes>小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。
-Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
+	  <PackageReleaseNotes>
+		  小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。AOT版本
+		  Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally,AOT version
 	  </PackageReleaseNotes>
 	  <RepositoryUrl>https://github.com/TripleView/MiHome.Net</RepositoryUrl>
 	  <RepositoryType>github</RepositoryType>
@@ -21,8 +22,10 @@ Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices th
 	  <IsPackable>true</IsPackable>
 	  <PackageProjectUrl>https://github.com/TripleView/MiHome.Net</PackageProjectUrl>
 	  <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
-	  <Version>1.0.0</Version>
+	  <Version>1.0.1</Version>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <LangVersion>latest</LangVersion>
+	  <AssemblyName>$(MSBuildProjectName).Aot</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,8 +36,12 @@ Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices th
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="SummerBoot" Version="2.1.3" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+    
   </ItemGroup>
 
 </Project>
