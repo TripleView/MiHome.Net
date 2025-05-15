@@ -178,6 +178,8 @@ var result2 = await miHomeDriver.Cloud.GetDeviceSpec(xiaoAi.Model);
      In = new List<string>() { "门前大桥下，游过一群鸭" }
  });
 ````
+特别注意，通过蓝牙mesh接入米家的设备，只能通过云端控制
+
 
 # 开源地址，欢迎star
 本项目基于MIT协议开源，地址为
