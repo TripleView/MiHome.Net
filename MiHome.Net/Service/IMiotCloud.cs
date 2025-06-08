@@ -260,6 +260,71 @@ public class MIotCloud : IMiotCloud
                 {
                     throw new Exception("请先登陆米家app校验手机");
                 }
+                if (result2Obj.notificationUrl.HasText() && result2Obj.notificationUrl.Contains("identity/authStart"))
+                {
+                    var checkIdentityListUrl =
+                        "https://account.xiaomi.com" + result2Obj.notificationUrl.Replace("identity/authStart", "identity/list");
+                    var checkIdentityLisRes = await xiaoMiLoginService.CheckIdentityList(checkIdentityListUrl);
+                    checkIdentityLisRes.EnsureSuccessStatusCode();
+                    var checkIdentityListCookies = checkIdentityLisRes.Headers.Where(it => it.Key == "Set-Cookie").SelectMany(it => it.Value).ToList()
+                        .Select(it => it.Split(";")[0]).ToList();
+                    if (checkIdentityListCookies.Count == 0)
+                    {
+                        throw new Exception("Get ServiceToken Error");
+                    }
+
+                    var identitySession = checkIdentityListCookies.FirstOrDefault(it => it.StartsWith("identity_session"))
+                            ?.Replace("identity_session=", "");
+
+                    if (identitySession.IsNullOrWhiteSpace())
+                    {
+                        throw new Exception("Get identitySession Error");
+                    }
+
+                    var checkIdentityListString = await checkIdentityLisRes.Content.ReadAsStringAsync();
+
+                    if (checkIdentityListString.HasText() && checkIdentityListString.StartsWith(startValue))
+                    {
+                        checkIdentityListString = checkIdentityListString.Replace(startValue, "");
+                        var checkIdentityLisObj = JsonConvert.DeserializeObject<CheckIdentityLisResult>(checkIdentityListString);
+                        if (checkIdentityLisObj == null)
+                        {
+                            throw new Exception("获取checkIdentityListString失败");
+                        }
+
+                        var options = checkIdentityLisObj.options.ToList();
+                        if (options.Count == 0)
+                        {
+                            options = new List<int>() { checkIdentityLisObj.flag };
+                        }
+
+                        var verifyDic = new Dictionary<int, string>()
+                        {
+                            { 4, "identity/auth/verifyPhone" },
+                            { 8, "identity/auth/verifyEmail" },
+                        };
+
+                        foreach (var option in options)
+                        {
+                            var isGet = verifyDic.TryGetValue(option, out var verifyUrl);
+                            if (isGet)
+                            {
+                                var dc = (int)DateTime.UtcNow.UtcDateTimeToUnixTimeStamp() * 1000;
+                                var ffff = await xiaoMiLoginService.VerifyTicket(verifyUrl, new LoginVerifyTicketInputDto()
+                                {
+                                    _flag = option,
+                                    _json = true,
+                                    trust = true,
+                                    ticket = ""
+                                }, dc.ToString());
+                                checkIdentityLisRes.EnsureSuccessStatusCode();
+                                var fdsfsdf = await ffff.Content.ReadAsStringAsync();
+                            }
+                        }
+
+                    }
+                }
+
                 //var clientSign = "";
                 //var temp = $"nonce={result2Obj.nonce}&{result2Obj.ssecurity}";
                 //var gearr = Encoding.UTF8.GetBytes(temp);

@@ -16,8 +16,8 @@ namespace Demo
             //添加小米米家的驱动服务，需要小米账号和密码
             hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
             {
-                x.UserName = "<这里填写米家账号>";
-                x.Password = "<这里填写米家米家>";
+                x.UserName = "18050050949";
+                x.Password = "lean5426";
             }));
             var host = hostBuilder.Build();
 

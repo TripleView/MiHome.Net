@@ -16,6 +16,13 @@ public interface IXiaoMiLoginService
 
     [PostMapping("/pass/serviceLoginAuth2?_json=true")]
     Task<string> ServiceLoginAuth2([Body(SerializationKind = BodySerializationKind.Form)] ServiceLoginAuth2InputDto dto);
+
+    [PostMapping("{{url}}?_dc={{dc}}")]
+    Task<HttpResponseMessage> VerifyTicket(string url,[Body(SerializationKind = BodySerializationKind.Form)] LoginVerifyTicketInputDto dto,string dc);
+    
+    [GetMapping("{{url}}", UsePathAsUrl = true)]
+    Task<HttpResponseMessage> CheckIdentityList(string url);
+
     [GetMapping("{{url}}", UsePathAsUrl = true)]
     Task<HttpResponseMessage> Login(string url);
 
