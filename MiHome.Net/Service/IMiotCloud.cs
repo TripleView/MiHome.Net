@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Web;
 using Microsoft.Extensions.Logging;
 using MiHome.Net.Dto;
 using MiHome.Net.FeignService;
@@ -234,8 +235,44 @@ public class MIotCloud : IMiotCloud
         if (result.HasText() && result.StartsWith(startValue))
         {
             result = result.Replace(startValue, "");
-
             var resultObj = JsonConvert.DeserializeObject<ServiceLoginResultDto>(result);
+            if (resultObj == null)
+            {
+                throw new Exception("登录失败,原因：第一步");
+            }
+            long millis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            string dc2 = millis.ToString();
+
+            string location = resultObj.location;
+            var uri = new Uri(location);
+            var query = uri.Query;
+            var queryDict = HttpUtility.ParseQueryString(query);
+            var serviceParam = queryDict["serviceParam"];
+
+            var qrCodeParam = new LoginQrCodeInputDto()
+            {
+                qs = resultObj.qs,
+                callback = resultObj.callback,
+                serviceParam = serviceParam,
+                _sign = resultObj._sign,
+                _dc = dc2
+            };
+            var loginUrlResultString = await xiaoMiLoginService.LoginUrl(qrCodeParam);
+            if (loginUrlResultString.HasText() && loginUrlResultString.StartsWith(startValue))
+            {
+                loginUrlResultString = loginUrlResultString.Replace(startValue, "");
+                var loginUrlResult = JsonConvert.DeserializeObject<LoginQrCodeOutPutDto>(loginUrlResultString);
+                if (loginUrlResult == null)
+                {
+                    throw new Exception("登录失败,原因：第2步,获取二维码信息失败");
+                }
+
+                if (loginUrlResult.code != 0)
+                {
+                    throw new Exception("登录失败,原因：第2步,获取二维码信息失败," + loginUrlResultString);
+                }
+            }
+
             var param = new ServiceLoginAuth2InputDto()
             {
                 _sign = resultObj._sign,

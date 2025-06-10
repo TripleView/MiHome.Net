@@ -14,6 +14,9 @@ public interface IXiaoMiLoginService
     [GetMapping("/pass/serviceLogin?sid=xiaomiio&_json=true")]
     Task<string> ServiceLogin(string deviceId);
 
+    [GetMapping("/longPolling/loginUrl")]
+    Task<string> LoginUrl([Query]LoginQrCodeInputDto dto);
+
     [PostMapping("/pass/serviceLoginAuth2?_json=true")]
     Task<string> ServiceLoginAuth2([Body(SerializationKind = BodySerializationKind.Form)] ServiceLoginAuth2InputDto dto);
 

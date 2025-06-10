@@ -10,4 +10,9 @@ public class MiHomeAccountOption
     /// xiaomi account password 小米账号的密码
     /// </summary>
     public string Password { get; set; }
+    /// <summary>
+    /// QR code save path
+    /// 二维码保存路径
+    /// </summary>
+    public string QrCodeSavePath { get; set; }
 }
