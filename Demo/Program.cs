@@ -13,27 +13,28 @@ namespace Demo
         public static async Task Main(string[] args)
         {
             var hostBuilder = Host.CreateDefaultBuilder();
-            //添加小米米家的驱动服务，需要小米账号和密码
+            //添加小米米家的驱动服务
             hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
             {
-                x.UserName = "18050050949";
-                x.Password = "lean5426";
+                //这里可以自定义二维码保存路径
+                //x.QrCodeSavePath = Path.Combine(AppContext.BaseDirectory, "qrCode");
             }));
             var host = hostBuilder.Build();
 
             var miHomeDriver = host.Services.GetService<IMiHomeDriver>();
+            await miHomeDriver.Cloud.LoginAsync();
             //列出家庭里所有的智能家居设备
             var deviceList = await miHomeDriver.Cloud.GetDeviceListAsync();
             //通过米家app里自己设置的智能家居名称找出自己想要操作的智能家居设备
             var moonLight = deviceList.FirstOrDefault(it => it.Name == "月球灯");
             var xiaoAi = deviceList.FirstOrDefault(it => it.Name == "小爱音箱Play增强版");
             var cp5pro = deviceList.FirstOrDefault(it => it.Name == "Gosund智能排插CP5 Pro");
+
+
             //通过设备型号获取设备规格
             var result = await miHomeDriver.Cloud.GetDeviceSpec(moonLight.Model);
             var result2 = await miHomeDriver.Cloud.GetDeviceSpec(xiaoAi.Model);
             var result3 = await miHomeDriver.Cloud.GetDeviceSpec(cp5pro.Model);
-
-
 
             //使用云端方式调用Gosund智能排插CP5 Pro中4个开关中第3个开关的toggle方法
             var r11 = await miHomeDriver.Cloud.CallActionAsync(new CallActionInputDto()
@@ -131,6 +132,8 @@ namespace Demo
               }
           });
 
+            //退出登录
+            await miHomeDriver.Cloud.LogOutAsync();
 
         }
     }

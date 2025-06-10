@@ -4,7 +4,7 @@
 使用本依赖包，用户可以通过云端或者本地的方式用c#原生api来操作米家智能家居设备。
 
 # 分支
-本项目共2个分支，main分支和Aot分支，aot分支主要为aot编译准备，比如unity
+本项目共2个分支，main分支和Aot分支(暂时不可用)，aot分支主要为aot编译准备，比如unity
 
 # Getting Started
 ## Nuget
@@ -18,21 +18,34 @@
 
 # 支持框架
 net6.0;net8.0;netstandard2.0
+
 # api使用讲解
-本库基于依赖注入，首先新建一个控制台应用，引入MiHome.Net的nuget包，接着添加小米米家的驱动服务，需要配置米家账号和密码，代码如下:
+
+本库基于依赖注入，在这里以控制台应用来演示，首先引入MiHome.Net的nuget包，接着添加小米米家的驱动服务，当前版本采用米家app扫描本类库生成的二维码的方式进行登录,可以自定义二维码保存的路径，默认路径为当前程序基础路径下的output目录，代码如下:
 ````csharp
  var hostBuilder = Host.CreateDefaultBuilder();
- //添加小米米家的驱动服务，需要小米账号和密码
- hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
- {
-     x.UserName = "<这里填写米家账号>";
-     x.Password = "<这里填写米家密码>";
- }));
+//添加小米米家的驱动服务
+hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
+{
+    //这里可以自定义二维码保存路径
+    //x.QrCodeSavePath = Path.Combine(AppContext.BaseDirectory, "qrCode");
+}));
  var host = hostBuilder.Build();
  var miHomeDriver = host.Services.GetService<IMiHomeDriver>();
 ````
 
-获取到米家驱动服务以后，我们首先通过云端的方式调用接口，列出家庭里所有的智能家居设备，接着通过米家app里自己设置的设备名称找出自己想要操作的智能家居设备，我这里演示的是一个【米家智能插座2】，![米家智能插座2](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426000632027-1120180539.png)
+获取到米家驱动服务以后，我们首先进行登录,调用LoginAsync方法，此时本库会在二维码保存路径下，生成二维码图片qr.png，我们需要在60秒内用米家app扫描该二维码进行登录，超时则报错，需要重新调用LoginAsync方法进行登录，登录成功后，本库会将登录信息进行持久化，保存在当前程序基础路径下的auth.json文件中，有效期为28天，意思就是只需要扫码登录一次，此后的28天内都不需要再重新扫码登录了。
+
+````csharp
+await miHomeDriver.Cloud.LoginAsync();
+````
+
+同样的，既然有登录，我们也允许退出登录，即调用
+````csharp
+await miHomeDriver.Cloud.LogOutAsync();
+````
+
+登录后，我们就可以通过云端的方式调用接口，列出家庭里所有的智能家居设备，接着通过米家app里自己设置的设备名称找出自己想要操作的智能家居设备，我这里演示的是一个【米家智能插座2】，![米家智能插座2](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426000632027-1120180539.png)
 我将3D打印出来的月球灯连到了这个插座上，并在米家app里将这个插座命名为月球灯，这样就将月球灯接入了智能家居。继续讲解api，接下来通过设备型号获取设备规格，这一步的目的，主要是了解我们要操作的智能家居设备都有哪些服务，哪些方法，哪些属性，并获得它们的id,因为我们操作智能家居需要用到设备id（即did），服务id(即siid)，属性id(即piid)，方法id（即aiid），代码如下：
 
 ````csharp

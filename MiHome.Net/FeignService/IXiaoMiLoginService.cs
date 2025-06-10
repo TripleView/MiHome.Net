@@ -6,7 +6,7 @@ namespace MiHome.Net.FeignService;
 
 //,
 //"Cookie:sdkVersion=3.9;deviceId={{deviceId}}")
-[FeignClient(Url = "https://account.xiaomi.com/")]
+[FeignClient(Url = "https://account.xiaomi.com/",Timeout = 60)]
 [Headers("User-Agent:APP/com.xiaomi.mihome APPV/6.0.103 iosPassportSDK/3.9.0 iOS/14.4 miHSTS")]
 public interface IXiaoMiLoginService
 {
@@ -15,7 +15,11 @@ public interface IXiaoMiLoginService
     Task<string> ServiceLogin(string deviceId);
 
     [GetMapping("/longPolling/loginUrl")]
-    Task<string> LoginUrl([Query]LoginQrCodeInputDto dto);
+    Task<string> LoginUrl([Query] QrCodeLoginInputDto dto);
+
+    [Headers("Connection:keep-alive")]
+    [GetMapping("{{url}}", UsePathAsUrl = true)]
+    Task<string> QrCodeLogin(string url);
 
     [PostMapping("/pass/serviceLoginAuth2?_json=true")]
     Task<string> ServiceLoginAuth2([Body(SerializationKind = BodySerializationKind.Form)] ServiceLoginAuth2InputDto dto);

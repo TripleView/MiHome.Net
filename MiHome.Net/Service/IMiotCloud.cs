@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -7,6 +8,9 @@ using MiHome.Net.Dto;
 using MiHome.Net.FeignService;
 using MiHome.Net.Utils;
 using Newtonsoft.Json;
+using SkiaSharp;
+using SkiaSharp.QrCode;
+using SkiaSharp.QrCode.Image;
 using SummerBoot.Cache;
 using SummerBoot.Core;
 using SummerBoot.Feign;
@@ -61,6 +65,16 @@ public interface IMiotCloud
     /// <param Name="callActionParam"></param>
     /// <returns></returns>
     Task<string> CallActionAsync(CallActionInputDto callActionParam);
+    /// <summary>
+    /// 登录
+    /// </summary>
+    /// <returns></returns>
+    Task LoginAsync();
+    /// <summary>
+    /// 退出
+    /// </summary>
+    /// <returns></returns>
+    Task LogOutAsync();
 }
 
 [AutoRegister(typeof(IMiotCloud))]
@@ -198,16 +212,26 @@ public class MIotCloud : IMiotCloud
         if (loginInfoResult.HasValue)
         {
             loginInfoDto = loginInfoResult.Data;
-        }
-        else
-        {
-            loginInfoDto = await GetInternalLoginInfoAsync();
-            await cache.SetValueWithAbsoluteAsync("loginInfo", loginInfoDto, TimeSpan.FromHours(6));
+            return loginInfoDto;
         }
 
-        return loginInfoDto;
+        throw new Exception("登录信息已过期，请重新登录");
     }
 
+    private void SaveLoginInfoToFile(LoginInfoDto dto)
+    {
+        if (File.Exists(GetAuthFilePath))
+        {
+            File.Delete(GetAuthFilePath);
+        }
+        var authJson = JsonConvert.SerializeObject(dto);
+        File.WriteAllText(GetAuthFilePath, authJson);
+    }
+
+    /// <summary>
+    /// 登录信息保存的文件路径
+    /// </summary>
+    private string GetAuthFilePath => Path.Combine(AppContext.BaseDirectory, "auth.json");
 
     /// <summary>
     /// 真正登录的代码
@@ -216,12 +240,6 @@ public class MIotCloud : IMiotCloud
     /// <exception cref="Exception"></exception>
     private async Task<LoginInfoDto> GetInternalLoginInfoAsync()
     {
-        if (option.UserName.IsNullOrWhiteSpace() || option.Password.IsNullOrWhiteSpace())
-        {
-            logger?.LogError("UserName or Password is empty!");
-            throw new Exception("UserName or Password is empty!");
-        }
-
         fegiFeignUnitOfWork.BeginCookie();
 
         var clientId = GetClientId();
@@ -247,9 +265,9 @@ public class MIotCloud : IMiotCloud
             var uri = new Uri(location);
             var query = uri.Query;
             var queryDict = HttpUtility.ParseQueryString(query);
-            var serviceParam = queryDict["serviceParam"];
+            var serviceParam = queryDict["serviceParam"] ?? "";
 
-            var qrCodeParam = new LoginQrCodeInputDto()
+            var qrCodeParam = new QrCodeLoginInputDto()
             {
                 qs = resultObj.qs,
                 callback = resultObj.callback,
@@ -261,7 +279,7 @@ public class MIotCloud : IMiotCloud
             if (loginUrlResultString.HasText() && loginUrlResultString.StartsWith(startValue))
             {
                 loginUrlResultString = loginUrlResultString.Replace(startValue, "");
-                var loginUrlResult = JsonConvert.DeserializeObject<LoginQrCodeOutPutDto>(loginUrlResultString);
+                var loginUrlResult = JsonConvert.DeserializeObject<QrCodeLoginOutPutDto>(loginUrlResultString);
                 if (loginUrlResult == null)
                 {
                     throw new Exception("登录失败,原因：第2步,获取二维码信息失败");
@@ -271,129 +289,91 @@ public class MIotCloud : IMiotCloud
                 {
                     throw new Exception("登录失败,原因：第2步,获取二维码信息失败," + loginUrlResultString);
                 }
-            }
-
-            var param = new ServiceLoginAuth2InputDto()
-            {
-                _sign = resultObj._sign,
-                callback = resultObj.callback,
-                qs = resultObj.qs,
-                sid = resultObj.sid,
-                user = option.UserName,
-                hash = ConvertStringtoMD5(option.Password).ToUpper()
-            };
-            var result2 = await xiaoMiLoginService.ServiceLoginAuth2(param);
-            if (result2.HasText() && result2.StartsWith(startValue))
-            {
-                result2 = result2.Replace(startValue, "");
-
-                var result2Obj = JsonConvert.DeserializeObject<ServiceLoginAuth2OutputDto>(result2);
-                if (result2Obj == null)
+                this.SaveQrCode(loginUrlResult.loginUrl);
+                var qrCodeLoginResultString = "";
+                try
                 {
-                    throw new Exception("获取登陆信息失败");
+                    qrCodeLoginResultString = await xiaoMiLoginService.QrCodeLogin(loginUrlResult.lp);
+                }
+                catch (TimeoutException e)
+                {
+                    throw new Exception("登录失败,原因：第3步扫描二维码超时，请重新扫描");
+                }
+                catch (TaskCanceledException e)
+                {
+                    throw new Exception("登录失败,原因：第3步扫描二维码超时，请重新扫描");
                 }
 
-                if (result2Obj.notificationUrl.HasText() && result2Obj.notificationUrl.Contains("verifyPhone"))
+                if (qrCodeLoginResultString.HasText() && qrCodeLoginResultString.StartsWith(startValue))
                 {
-                    throw new Exception("请先登陆米家app校验手机");
-                }
-                if (result2Obj.notificationUrl.HasText() && result2Obj.notificationUrl.Contains("identity/authStart"))
-                {
-                    var checkIdentityListUrl =
-                        "https://account.xiaomi.com" + result2Obj.notificationUrl.Replace("identity/authStart", "identity/list");
-                    var checkIdentityLisRes = await xiaoMiLoginService.CheckIdentityList(checkIdentityListUrl);
-                    checkIdentityLisRes.EnsureSuccessStatusCode();
-                    var checkIdentityListCookies = checkIdentityLisRes.Headers.Where(it => it.Key == "Set-Cookie").SelectMany(it => it.Value).ToList()
+                    qrCodeLoginResultString = qrCodeLoginResultString.Replace(startValue, "");
+                    var qrCodeLoginResult = JsonConvert.DeserializeObject<QrCodeLogin2OutputDto>(qrCodeLoginResultString);
+                    if (qrCodeLoginResult == null)
+                    {
+                        throw new Exception("登录失败,原因：第4步解析失败");
+                    }
+
+                    if (qrCodeLoginResult.code != 0)
+                    {
+                        throw new Exception("登录失败,原因：第4步" + qrCodeLoginResult.desc);
+                    }
+                    var result3 = await xiaoMiLoginService.Login(qrCodeLoginResult.location);
+                    result3.EnsureSuccessStatusCode();
+                    var cookies = result3.Headers.Where(it => it.Key == "Set-Cookie").SelectMany(it => it.Value).ToList()
                         .Select(it => it.Split(";")[0]).ToList();
-                    if (checkIdentityListCookies.Count == 0)
+                    if (cookies.Count == 0)
                     {
-                        throw new Exception("Get ServiceToken Error");
+                        throw new Exception("登录失败,原因：第5步，Get ServiceToken Error");
                     }
 
-                    var identitySession = checkIdentityListCookies.FirstOrDefault(it => it.StartsWith("identity_session"))
-                            ?.Replace("identity_session=", "");
-
-                    if (identitySession.IsNullOrWhiteSpace())
+                    var serviceToken = cookies.FirstOrDefault(it => it.StartsWith("serviceToken"))
+                        ?.Replace("serviceToken=", "");
+                    fegiFeignUnitOfWork.StopCookie();
+                    var loginInfo = new LoginInfoDto()
                     {
-                        throw new Exception("Get identitySession Error");
-                    }
-
-                    var checkIdentityListString = await checkIdentityLisRes.Content.ReadAsStringAsync();
-
-                    if (checkIdentityListString.HasText() && checkIdentityListString.StartsWith(startValue))
-                    {
-                        checkIdentityListString = checkIdentityListString.Replace(startValue, "");
-                        var checkIdentityLisObj = JsonConvert.DeserializeObject<CheckIdentityLisResult>(checkIdentityListString);
-                        if (checkIdentityLisObj == null)
-                        {
-                            throw new Exception("获取checkIdentityListString失败");
-                        }
-
-                        var options = checkIdentityLisObj.options.ToList();
-                        if (options.Count == 0)
-                        {
-                            options = new List<int>() { checkIdentityLisObj.flag };
-                        }
-
-                        var verifyDic = new Dictionary<int, string>()
-                        {
-                            { 4, "identity/auth/verifyPhone" },
-                            { 8, "identity/auth/verifyEmail" },
-                        };
-
-                        foreach (var option in options)
-                        {
-                            var isGet = verifyDic.TryGetValue(option, out var verifyUrl);
-                            if (isGet)
-                            {
-                                var dc = (int)DateTime.UtcNow.UtcDateTimeToUnixTimeStamp() * 1000;
-                                var ffff = await xiaoMiLoginService.VerifyTicket(verifyUrl, new LoginVerifyTicketInputDto()
-                                {
-                                    _flag = option,
-                                    _json = true,
-                                    trust = true,
-                                    ticket = ""
-                                }, dc.ToString());
-                                checkIdentityLisRes.EnsureSuccessStatusCode();
-                                var fdsfsdf = await ffff.Content.ReadAsStringAsync();
-                            }
-                        }
-
-                    }
+                        DeviceId = clientId,
+                        ServiceToken = serviceToken,
+                        Ssecurity = qrCodeLoginResult.ssecurity,
+                        UserId = qrCodeLoginResult.userId
+                    };
+                    return loginInfo;
                 }
-
-                //var clientSign = "";
-                //var temp = $"nonce={result2Obj.nonce}&{result2Obj.ssecurity}";
-                //var gearr = Encoding.UTF8.GetBytes(temp);
-                //var geresult = gearr.ToSha1ThenBase64();
-                //result2Obj.location = result2Obj.location + $"&clientSign={geresult}";
-
-                var result3 = await xiaoMiLoginService.Login(result2Obj.location);
-                result3.EnsureSuccessStatusCode();
-                var cookies = result3.Headers.Where(it => it.Key == "Set-Cookie").SelectMany(it => it.Value).ToList()
-                    .Select(it => it.Split(";")[0]).ToList();
-                if (cookies.Count == 0)
-                {
-                    throw new Exception("Get ServiceToken Error");
-                }
-
-                var serviceToken = cookies.FirstOrDefault(it => it.StartsWith("serviceToken"))
-                    ?.Replace("serviceToken=", "");
-                fegiFeignUnitOfWork.StopCookie();
-                var loginInfo = new LoginInfoDto()
-                {
-                    DeviceId = clientId,
-                    ServiceToken = serviceToken,
-                    Ssecurity = result2Obj.ssecurity,
-                    UserId = result2Obj.userId
-                };
-                return loginInfo;
             }
         }
 
         var errorMsg = "login fail";
         logger?.LogError(errorMsg);
         throw new Exception(errorMsg);
+    }
+
+    private void SaveQrCode(string url)
+    {
+        var path = InitQrCodePath();
+
+        using var output = new FileStream(path, FileMode.OpenOrCreate);
+        // generate QRCode
+        var qrCode = new QrCode(url, new Vector2Slim(256, 256), SKEncodedImageFormat.Png);
+        // output to file
+        qrCode.GenerateImage(output);
+    }
+
+    private string InitQrCodePath()
+    {
+        var path = option.QrCodeSavePath.HasText()
+            ? option.QrCodeSavePath
+            : Path.Combine(AppContext.BaseDirectory, "output");
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        path = Path.Combine(path, "qr.png");
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+
+        return path;
     }
 
     private string GetClientId()
@@ -530,20 +510,6 @@ public class MIotCloud : IMiotCloud
         return Convert.ToBase64String(finalByteArr);
     }
 
-    private string ConvertStringtoMD5(string strword)
-    {
-        MD5 md5 = MD5.Create();
-        byte[] inputBytes = Encoding.UTF8.GetBytes(strword);
-        byte[] hash = md5.ComputeHash(inputBytes);
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < hash.Length; i++)
-        {
-            sb.Append(hash[i].ToString("x2"));
-        }
-
-        return sb.ToString();
-    }
-
     public async Task<List<XiaoMiDeviceInfo>> GetDeviceListAsync()
     {
         await BeginControlDeviceCookieAsync();
@@ -659,5 +625,48 @@ public class MIotCloud : IMiotCloud
     {
         var result = await this.SetPropertiesAsync(new List<SetPropertyDto>() { property });
         return result.First();
+    }
+
+    public async Task LoginAsync()
+    {
+        if (File.Exists(GetAuthFilePath))
+        {
+            var authJson = File.ReadAllText(GetAuthFilePath);
+            if (authJson.IsNullOrWhiteSpace())
+            {
+                throw new Exception("读取持久化登录信息失败");
+            }
+            var tempLoginInfoDto = JsonConvert.DeserializeObject<LoginInfoDto>(authJson);
+            if (tempLoginInfoDto == null)
+            {
+                throw new Exception("读取持久化登录信息失败");
+            }
+
+            if (tempLoginInfoDto.ExpireTime.HasValue)
+            {
+                var diffTime = (tempLoginInfoDto.ExpireTime.Value - DateTime.UtcNow);
+                if (diffTime.TotalMinutes > 30)
+                {
+                    await cache.SetValueWithAbsoluteAsync("loginInfo", tempLoginInfoDto, diffTime);
+                }
+            }
+        }
+        else
+        {
+            var loginInfoDto = await GetInternalLoginInfoAsync();
+            loginInfoDto.ExpireTime = DateTime.UtcNow.AddDays(28);
+            await cache.SetValueWithAbsoluteAsync("loginInfo", loginInfoDto, TimeSpan.FromDays(28));
+            SaveLoginInfoToFile(loginInfoDto);
+        }
+    }
+
+    public async Task LogOutAsync()
+    {
+        await cache.RemoveAsync("loginInfo");
+        InitQrCodePath();
+        if (File.Exists(GetAuthFilePath))
+        {
+            File.Delete(GetAuthFilePath);
+        }
     }
 }

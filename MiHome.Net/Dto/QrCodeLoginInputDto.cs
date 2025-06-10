@@ -3,7 +3,7 @@
 /// <summary>
 /// 二维码登录参数
 /// </summary>
-public class LoginQrCodeInputDto
+public class QrCodeLoginInputDto
 {
     public string _qrsize { get; set; }
     public string qs { get; set; }

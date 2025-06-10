@@ -1,6 +1,6 @@
 ﻿namespace MiHome.Net.Dto;
 
-public class LoginQrCodeOutPutDto
+public class QrCodeLoginOutPutDto
 {
     public string loginUrl { get; set; }
     public string qr { get; set; }
