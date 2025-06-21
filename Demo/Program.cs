@@ -23,6 +23,8 @@ namespace Demo
 
             var miHomeDriver = host.Services.GetService<IMiHomeDriver>();
             await miHomeDriver.Cloud.LoginAsync();
+            //列出所有家庭
+            var homeList = await miHomeDriver.Cloud.GetHomeListAsync();
             //列出家庭里所有的智能家居设备
             var deviceList = await miHomeDriver.Cloud.GetDeviceListAsync();
             //通过米家app里自己设置的智能家居名称找出自己想要操作的智能家居设备

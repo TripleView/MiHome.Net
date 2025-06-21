@@ -28,11 +28,11 @@ public class XiaoMiDeviceInfo
 {
 
     /// <summary>
-    /// 
+    /// 设备id
     /// </summary>
     public string Did { get; set; }
     /// <summary>
-    /// 
+    /// 设备token值
     /// </summary>
     public string Token { get; set; }
     /// <summary>
@@ -44,7 +44,7 @@ public class XiaoMiDeviceInfo
     /// </summary>
     public string Latitude { get; set; }
     /// <summary>
-    /// 
+    /// 设备名称
     /// </summary>
     public string Name { get; set; }
     /// <summary>
@@ -52,11 +52,11 @@ public class XiaoMiDeviceInfo
     /// </summary>
     public string Pid { get; set; }
     /// <summary>
-    /// 
+    /// 局域网ip
     /// </summary>
     public string LocalIp { get; set; }
     /// <summary>
-    /// 
+    /// 设备mac地址
     /// </summary>
     public string Mac { get; set; }
     /// <summary>
@@ -108,7 +108,7 @@ public class XiaoMiDeviceInfo
     /// </summary>
     public Extra Extra { get; set; }
     /// <summary>
-    /// 
+    /// 家庭id
     /// </summary>
     public long Uid { get; set; }
     /// <summary>

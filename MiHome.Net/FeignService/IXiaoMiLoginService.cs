@@ -45,6 +45,13 @@ public interface IXiaoMiControlDevicesService
 {
     [PostMapping("home/device_list")]
     Task<string> GetDeviceList([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+    /// <summary>
+    /// 获取家庭列表
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
+    [PostMapping("/v2/homeroom/gethome")]
+    Task<string> GetHomeList([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
 
     [PostMapping("/miotspec/prop/set")]
     Task<string> PropSet([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);

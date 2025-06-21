@@ -33,6 +33,13 @@ public interface IMiotCloud
     /// </summary>
     /// <returns></returns>
     Task<List<XiaoMiDeviceInfo>> GetDeviceListAsync();
+
+    /// <summary>
+    /// Get a list of families
+    /// 获取家庭列表
+    /// </summary>
+    /// <returns></returns>
+    Task<List<HomeDto>> GetHomeListAsync();
     /// <summary>
     /// Get properties in batches批量获取属性
     /// </summary>
@@ -537,6 +544,37 @@ public class MIotCloud : IMiotCloud
         throw new Exception(errorMsg);
 
     }
+
+    public async Task<List<HomeDto>> GetHomeListAsync()
+    {
+        await BeginControlDeviceCookieAsync();
+        var loginInfoDto = await GetLoginInfoAsync();
+        //data = {"fg": False, "fetch_share": True, "fetch_share_dev": True, "limit": 300, "app_ver": 7}
+        var inputDto = new GetHomeInputDto()
+        {
+            fg = false,
+            fetch_share = true,
+            fetch_share_dev = true,
+            limit = 300,
+            app_ver = 7
+        };
+        var param = GetRc4Params("POST", "https://api.io.mi.com/app/v2/homeroom/gethome", inputDto, loginInfoDto.Ssecurity);
+        var signedNonce = param["signedNonce"];
+        var deviceListResultString = await xiaoMiControlDevicesService.GetHomeList(param);
+        await StopControlDeviceCookieAsync();
+        var decryptData = DecryptData(signedNonce, deviceListResultString);
+        var result = JsonConvert.DeserializeObject<GetHomeOutputResultDto>(decryptData);
+        if (result?.Code == 0)
+        {
+            return result.Result.HomeList;
+        }
+
+        var errorMsg = $"get Home List error,reason:{result?.Message}";
+        logger?.LogError(errorMsg);
+        throw new Exception(errorMsg);
+
+    }
+
 
     public async Task<List<GetPropOutputItemDto>> GetPropertiesAsync(List<GetPropertyDto> properties)
     {
