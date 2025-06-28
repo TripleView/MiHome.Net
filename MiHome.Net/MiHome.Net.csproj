@@ -23,7 +23,7 @@
 		<IsPackable>true</IsPackable>
 		<PackageProjectUrl>https://github.com/TripleView/MiHome.Net</PackageProjectUrl>
 		<PackageReadmeFile>ReadMe.md</PackageReadmeFile>
-		<Version>1.1.0</Version>
+		<Version>1.1.1</Version>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageIcon>logo.png</PackageIcon>
 	</PropertyGroup>

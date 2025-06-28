@@ -25,6 +25,16 @@ namespace Demo
             await miHomeDriver.Cloud.LoginAsync();
             //列出所有家庭
             var homeList = await miHomeDriver.Cloud.GetHomeListAsync();
+            var homeId= homeList.First().Id;
+          
+            //获取耗材列表
+            var consumableItems = await miHomeDriver.Cloud.GetConsumableItemsAsync(homeId);
+            
+            //列出所有场景
+            var sceneList = await miHomeDriver.Cloud.GetSceneListAsync(homeId);
+
+            //执行场景,参数为场景id
+            var executeResult = await miHomeDriver.Cloud.RunSceneAsync("1898041975848988672");
             //列出家庭里所有的智能家居设备
             var deviceList = await miHomeDriver.Cloud.GetDeviceListAsync();
             //通过米家app里自己设置的智能家居名称找出自己想要操作的智能家居设备

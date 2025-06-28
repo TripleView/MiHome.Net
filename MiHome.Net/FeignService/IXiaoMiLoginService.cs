@@ -43,8 +43,14 @@ public interface IXiaoMiLoginService
     "MIOT-ENCRYPT-ALGORITHM:ENCRYPT-RC4", "Connection:keep-alive")]
 public interface IXiaoMiControlDevicesService
 {
+    /// <summary>
+    /// 获取设备列表
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
     [PostMapping("home/device_list")]
     Task<string> GetDeviceList([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+
     /// <summary>
     /// 获取家庭列表
     /// </summary>
@@ -53,12 +59,52 @@ public interface IXiaoMiControlDevicesService
     [PostMapping("/v2/homeroom/gethome")]
     Task<string> GetHomeList([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
 
+    /// <summary>
+    /// 获取场景列表
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
+    [PostMapping("/appgateway/miot/appsceneservice/AppSceneService/GetSceneList")]
+    Task<string> GetSceneList([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+    /// <summary>
+    /// 执行场景
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
+    [PostMapping("/appgateway/miot/appsceneservice/AppSceneService/RunScene")]
+    Task<string> RunScene([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+
+    /// <summary>
+    /// 获取耗材列表
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
+    [PostMapping("/v2/home/standard_consumable_items")]
+    Task<string> GetConsumableItems([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+
+    /// <summary>
+    /// 设置属性
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
     [PostMapping("/miotspec/prop/set")]
     Task<string> PropSet([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+
+    /// <summary>
+    /// 获取属性
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
     [PostMapping("/miotspec/prop/get")]
     Task<string> PropGet([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+    /// <summary>
+    /// 调用方法
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
     [PostMapping("/miotspec/action")]
     Task<string> ActionCall([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
+
     [PostMapping("user/get_user_device_data")]
     Task<string> GetUserDeviceData([Body(BodySerializationKind.Form)] Dictionary<string, string> dto);
 }

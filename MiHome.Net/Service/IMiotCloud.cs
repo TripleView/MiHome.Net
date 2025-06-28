@@ -35,6 +35,27 @@ public interface IMiotCloud
     Task<List<XiaoMiDeviceInfo>> GetDeviceListAsync();
 
     /// <summary>
+    /// Get scene list
+    /// 获取场景列表。
+    /// </summary>
+    /// <returns></returns>
+    Task<List<SceneDto>> GetSceneListAsync(string homeId);
+
+    /// <summary>
+    /// Execution scenario
+    /// 执行场景
+    /// </summary>
+    /// <param name="sceneId">场景id</param>
+    /// <returns></returns>
+    Task<bool> RunSceneAsync(string sceneId);
+    /// <summary>
+    /// 获取耗材列表
+    /// </summary>
+    /// <param name="homeId">家庭id</param>
+    /// <returns></returns>
+    Task<List<GetConsumableItemsOutputDto>> GetConsumableItemsAsync(string homeId);
+
+    /// <summary>
     /// Get a list of families
     /// 获取家庭列表
     /// </summary>
@@ -545,6 +566,39 @@ public class MIotCloud : IMiotCloud
 
     }
 
+    public async Task<List<GetConsumableItemsOutputDto>> GetConsumableItemsAsync(string homeId)
+    {
+        if (!decimal.TryParse(homeId, out var homeIdInt))
+        {
+            throw new NotSupportedException("homeId必须为数字");
+        }
+        await BeginControlDeviceCookieAsync();
+        var loginInfoDto = await GetLoginInfoAsync();
+
+        var inputDto = new GetConsumableItemsInputDto()
+        {
+            home_id = Int64.Parse(homeId),
+            owner_id = Int64.Parse(loginInfoDto.UserId),
+            //dids = new List<string>(),
+            //accessKey = "REMOVED",
+            //filter_ignore = true
+        };
+        var param = GetRc4Params("POST", "https://api.io.mi.com/app/v2/home/standard_consumable_items", inputDto, loginInfoDto.Ssecurity);
+        var signedNonce = param["signedNonce"];
+        var deviceListResultString = await xiaoMiControlDevicesService.GetConsumableItems(param);
+        await StopControlDeviceCookieAsync();
+        var decryptData = DecryptData(signedNonce, deviceListResultString);
+        var result = JsonConvert.DeserializeObject<GetConsumableItemsOutputResultDto>(decryptData);
+        if (result?.Code == 0)
+        {
+            return result.Result?.items ?? new List<GetConsumableItemsOutputDto>();
+        }
+
+        var errorMsg = $"Get ConsumableItems error,reason:{result?.Message}";
+        logger?.LogError(errorMsg);
+        throw new Exception(errorMsg);
+    }
+
     public async Task<List<HomeDto>> GetHomeListAsync()
     {
         await BeginControlDeviceCookieAsync();
@@ -572,9 +626,60 @@ public class MIotCloud : IMiotCloud
         var errorMsg = $"get Home List error,reason:{result?.Message}";
         logger?.LogError(errorMsg);
         throw new Exception(errorMsg);
+    }
+
+    public async Task<List<SceneDto>> GetSceneListAsync(string homeId)
+    {
+        await BeginControlDeviceCookieAsync();
+        var loginInfoDto = await GetLoginInfoAsync();
+
+        var inputDto = new GetSceneInputDto()
+        {
+            home_id = homeId
+        };
+        var param = GetRc4Params("POST", "https://api.io.mi.com/app/appgateway/miot/appsceneservice/AppSceneService/GetSceneList", inputDto, loginInfoDto.Ssecurity);
+        var signedNonce = param["signedNonce"];
+        var deviceListResultString = await xiaoMiControlDevicesService.GetSceneList(param);
+        await StopControlDeviceCookieAsync();
+        var decryptData = DecryptData(signedNonce, deviceListResultString);
+        var result = JsonConvert.DeserializeObject<GetSceneOutputResultDto>(decryptData);
+        if (result?.Code == 0)
+        {
+            return result.Result.SceneList;
+        }
+
+        var errorMsg = $"get Scene List error,reason:{result?.Message}";
+        logger?.LogError(errorMsg);
+        throw new Exception(errorMsg);
 
     }
 
+    public async Task<bool> RunSceneAsync(string sceneId)
+    {
+        await BeginControlDeviceCookieAsync();
+        var loginInfoDto = await GetLoginInfoAsync();
+
+        var inputDto = new RunSceneInputDto()
+        {
+            scene_id = sceneId,
+            trigger_key = "user.click"
+        };
+        var param = GetRc4Params("POST", "https://api.io.mi.com/app/appgateway/miot/appsceneservice/AppSceneService/RunScene", inputDto, loginInfoDto.Ssecurity);
+        var signedNonce = param["signedNonce"];
+        var deviceListResultString = await xiaoMiControlDevicesService.RunScene(param);
+        await StopControlDeviceCookieAsync();
+        var decryptData = DecryptData(signedNonce, deviceListResultString);
+        var result = JsonConvert.DeserializeObject<RunSceneOutputResultDto>(decryptData);
+        if (result?.Code == 0)
+        {
+            return true;
+        }
+
+        var errorMsg = $"get Scene List error,reason:{result?.Message}";
+        logger?.LogError(errorMsg);
+        throw new Exception(errorMsg);
+
+    }
 
     public async Task<List<GetPropOutputItemDto>> GetPropertiesAsync(List<GetPropertyDto> properties)
     {
