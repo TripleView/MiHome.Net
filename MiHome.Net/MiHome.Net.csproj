@@ -10,12 +10,10 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Authors>TripleView</Authors>
 		<Description>
-			小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。
-			Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
+			小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
 		</Description>
 		<PackageReleaseNotes>
-			小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。
-			Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
+			小米米家的原生c#sdk,他可以通过云端或者本地的方式用api来操作米家智能家居设备。Xiaomi Mijia's native c# sdk can use APIs to operate Mijia smart home devices through the cloud or locally.
 		</PackageReleaseNotes>
 		<RepositoryUrl>https://github.com/TripleView/MiHome.Net</RepositoryUrl>
 		<RepositoryType>github</RepositoryType>

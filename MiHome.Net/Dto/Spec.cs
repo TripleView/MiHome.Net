@@ -1,4 +1,6 @@
-﻿namespace MiHome.Net.Dto;
+﻿using Newtonsoft.Json;
+
+namespace MiHome.Net.Dto;
 
 public class MiotBaseModel
 {
@@ -24,7 +26,9 @@ public class MiotProperty : MiotBaseModel
     public int Iid { get; set; }
     public string Format { get; set; }
     public List<string> Access { get; set; }
+    [JsonProperty("value-list")]
     public List<MiotValueList> Valuelist { get; set; }
+    [JsonProperty("value-range")]
     public float[] ValueRange { get; set; }
     public string Unit { get; set; }
 }

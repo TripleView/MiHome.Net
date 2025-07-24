@@ -19,7 +19,6 @@ public static class MiHomeDriverExtension
             it.UseMemory();
         });
         services.AddSingleton<MiHomeAccountOption>(it=>accountOption);
-        services.AddSingleton<MiioProtocol>();
         services.AddScoped<IMiHomeDriver, MiHomeDriver>();
         return services;
     }

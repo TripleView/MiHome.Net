@@ -243,6 +243,7 @@ public class MIotCloud : IMiotCloud
             return loginInfoDto;
         }
 
+        await this.LogOutAsync();
         throw new Exception("登录信息已过期，请重新登录");
     }
 

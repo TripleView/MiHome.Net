@@ -34,6 +34,7 @@ hostBuilder.ConfigureServices(it => it.AddMiHomeDriver(x =>
  var miHomeDriver = host.Services.GetService<IMiHomeDriver>();
 ````
 
+## 1. 登录登出
 获取到米家驱动服务以后，我们首先进行登录,调用LoginAsync方法，此时本库会在二维码保存路径下，生成二维码图片qr.png，我们需要在60秒内用米家app扫描该二维码进行登录，超时则报错，需要重新调用LoginAsync方法进行登录，登录成功后，本库会将登录信息进行持久化，保存在当前程序基础路径下的auth.json文件中，有效期为28天，意思就是只需要扫码登录一次，此后的28天内都不需要再重新扫码登录了。
 
 ````csharp
@@ -45,20 +46,36 @@ await miHomeDriver.Cloud.LoginAsync();
 await miHomeDriver.Cloud.LogOutAsync();
 ````
 
-登录后，我们就可以通过云端的方式调用接口，列出家庭里所有的智能家居设备，接着通过米家app里自己设置的设备名称找出自己想要操作的智能家居设备，我这里演示的是一个【米家智能插座2】，![米家智能插座2](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426000632027-1120180539.png)
-我将3D打印出来的月球灯连到了这个插座上，并在米家app里将这个插座命名为月球灯，这样就将月球灯接入了智能家居。继续讲解api，接下来通过设备型号获取设备规格，这一步的目的，主要是了解我们要操作的智能家居设备都有哪些服务，哪些方法，哪些属性，并获得它们的id,因为我们操作智能家居需要用到设备id（即did），服务id(即siid)，属性id(即piid)，方法id（即aiid），代码如下：
+## 2. 获取所有家庭/房间
+家庭里有N个房间，每个房间里又有N个智能设备，是一个树状结构，即米家app里的房间结构，获取家庭/房间的目的，主要是查看每个房间里有哪些智能设备，同时，后续有些api调用需要用到家庭id
+````csharp
+var homeList = await miHomeDriver.Cloud.GetHomeListAsync();
+````
 
+## 3. 获取家庭里所有的智能家居设备
+登录后，我们就可以通过云端的方式调用接口，列出家庭里所有的智能家居设备，接着通过米家app里自己设置的设备名称找出自己想要操作的智能家居设备，我这里演示的是一个【米家智能插座2】，![米家智能插座2](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426000632027-1120180539.png)
+我将3D打印出来的月球灯连到了这个插座上，并在米家app里将这个插座命名为月球灯，这样就将月球灯接入了智能家居。
 ````csharp
   //列出家庭里所有的智能家居设备
   var deviceList = await miHomeDriver.Cloud.GetDeviceListAsync();
   //通过米家app里自己设置的智能家居名称找出自己想要操作的智能家居设备
   var moonLight = deviceList.FirstOrDefault(it => it.Name == "月球灯");
+
+````
+
+## 4. 通过设备型号获取设备规格
+接下来通过设备型号获取设备规格，这一步的目的，主要是了解我们要操作的智能家居设备都有哪些服务，哪些方法，哪些属性，并获得它们的id,因为我们操作智能家居需要用到设备id（即did），服务id(即siid)，属性id(即piid)，方法id（即aiid），代码如下：
+````csharp
   //通过设备型号获取设备规格
   var result = await miHomeDriver.Cloud.GetDeviceSpec(moonLight.Model);
 ````
+
 我这里将获取到的规格结果截图出来给大家讲解一下
 ![设备规格讲解](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426001530185-2122158528.png)
-从上图中可以看到，这个设备总共有8个服务，逐一点开后我发现我只需要了解switch服务（即开关服务）即可，它的iid为2（即siid为2），同时这个服务下有3个属性，逐一点开查看后我发现，我只需要了解Switch Status属性即可，他的iid为1（即piid为1），同时这个属性值的格式（Format）是bool类型,即这个属性值只能为true或者false，接下来我将演示如何获取开关状态，代码如下：
+从上图中可以看到，这个设备总共有8个服务，逐一点开后我发现我只需要了解switch服务（即开关服务）即可，它的iid为2（即siid为2），同时这个服务下有3个属性，逐一点开查看后我发现，我只需要了解Switch Status属性即可，他的iid为1（即piid为1），同时这个属性值的格式（Format）是bool类型,即这个属性值只能为true或者false。
+
+## 5. 获取/设置设备属性值
+接下来我将演示如何获取开关状态，代码如下：
 ````csharp
  //通过本地方式获取属性值
  var r1 = await miHomeDriver.Local.GetPropertyAsync(moonLight.LocalIp, moonLight.Token, new GetPropertyPayload()
@@ -140,6 +157,8 @@ await miHomeDriver.Cloud.LogOutAsync();
 });
 ````
 
+## 6. 调用设备服务里的方法
+
 接下来我给大家演示如何通过云端或者本地的方式调用设备服务里的方法，因为米家智能插座2没啥方法可以调用，所以我将使用【Gosund智能排插CP5 Pro】和【小爱音箱Play增强版】来给大家演示调用，先来【Gosund智能排插CP5 Pro】，这个排插长这样
 ![Gosund智能排插CP5 Pro](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426011926130-1028007718.png)
 他上面的4个插座都支持独立控制，我个人非常喜欢，强烈推荐(手动狗头，厂家打钱！)，接下来我将演示调用4个插座其中插座3的方法来控制插座3的开关，
@@ -193,6 +212,25 @@ var result2 = await miHomeDriver.Cloud.GetDeviceSpec(xiaoAi.Model);
 ````
 特别注意，通过蓝牙mesh接入米家的设备，只能通过云端控制
 
+## 7. 获取所有自动化场景
+获取场景需要用到家庭id，
+````csharp
+var homeId = homeList.First().Id;
+ //列出所有场景
+ var sceneList = await miHomeDriver.Cloud.GetSceneListAsync(homeId);
+````
+
+## 8. 根据场景id执行自动化场景
+````csharp
+//执行场景,参数为场景id
+var executeResult = await miHomeDriver.Cloud.RunSceneAsync(sceneList.First().SceneId);
+````
+
+## 9. 获取耗材列表
+````csharp
+//获取耗材列表
+var consumableItems = await miHomeDriver.Cloud.GetConsumableItemsAsync(homeId);
+````
 
 # 开源地址，欢迎star
 本项目基于MIT协议开源，地址为
