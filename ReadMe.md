@@ -70,6 +70,8 @@ var homeList = await miHomeDriver.Cloud.GetHomeListAsync();
   var result = await miHomeDriver.Cloud.GetDeviceSpec(moonLight.Model);
 ````
 
+**所有米家设备的属性和方法等详细信息，包括参数的含义等，可以到[https://home.miot-spec.com/](https://home.miot-spec.com/)这里根据设备型号进行查询**
+
 我这里将获取到的规格结果截图出来给大家讲解一下
 ![设备规格讲解](https://img2024.cnblogs.com/blog/1323385/202404/1323385-20240426001530185-2122158528.png)
 从上图中可以看到，这个设备总共有8个服务，逐一点开后我发现我只需要了解switch服务（即开关服务）即可，它的iid为2（即siid为2），同时这个服务下有3个属性，逐一点开查看后我发现，我只需要了解Switch Status属性即可，他的iid为1（即piid为1），同时这个属性值的格式（Format）是bool类型,即这个属性值只能为true或者false。
