@@ -1,4 +1,4 @@
-ï»¿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace MiHome.Net.Dto;
 
@@ -12,7 +12,7 @@ public class GetSceneOutputResultDto
 public class Result
 {
     /// <summary>
-    /// é¢å¤–json
+    /// ¶îÍâjson
     /// </summary>
     [JsonProperty("scene_info_list")]
     public List<SceneDto> SceneList { get; set; }
@@ -21,12 +21,12 @@ public class Result
 }
 
 /// <summary>
-/// åœºæ™¯dto
+/// ³¡¾°dto
 /// </summary>
 public class SceneDto
 {
     /// <summary>
-    /// åœºæ™¯id
+    /// ³¡¾°id
     /// </summary>
     [JsonProperty("scene_id")]
     public string SceneId { get; set; }
@@ -35,27 +35,27 @@ public class SceneDto
     /// </summary>
     public string Uid { get; set; }
     /// <summary>
-    /// å®¶åº­id
+    /// ¼ÒÍ¥id
     /// </summary>
     [JsonProperty("home_id")]
     public string HomeId { get; set; }
     /// <summary>
-    /// åœºæ™¯åç§°
+    /// ³¡¾°Ãû³Æ
     /// </summary>
     public string Name { get; set; }
     /// <summary>
-    /// æ¨¡æ¿id
+    /// Ä£°åid
     /// </summary>
     [JsonProperty("template_id")]
     public string TemplateId { get; set; }
     /// <summary>
-    /// åœºæ™¯ç±»å‹
+    /// ³¡¾°ÀàĞÍ
     /// </summary>
     public int Type { get; set; }
     [JsonProperty("local_dev")]
     public string LocalDev { get; set; }
     /// <summary>
-    /// æ˜¯å¦å¯ç”¨
+    /// ÊÇ·ñÆôÓÃ
     /// </summary>
     public bool Enable { get; set; }
     [JsonProperty("enable_push")]
@@ -64,177 +64,226 @@ public class SceneDto
     public bool CommonUse { get; set; }
     public object Timespan { get; set; }
     /// <summary>
-    /// åœºæ™¯ç»‘å®šçš„æ‰€æœ‰è§¦å‘å™¨
+    /// ³¡¾°°ó¶¨µÄËùÓĞ´¥·¢Æ÷
     /// </summary>
     [JsonProperty("scene_trigger")]
     public SceneTriggerBinding SceneTrigger { get; set; }
     /// <summary>
-    ///  åœºæ™¯ç»‘å®šçš„æ‰€æœ‰æ¡ä»¶
+    ///  ³¡¾°°ó¶¨µÄËùÓĞÌõ¼ş
     /// </summary>
     [JsonProperty("scene_condition")]
     public SceneConditionBinding SceneCondition { get; set; }
     /// <summary>
-    ///  åœºæ™¯ç»‘å®šçš„æ‰€æœ‰åŠ¨ä½œ
+    ///  ³¡¾°°ó¶¨µÄËùÓĞ¶¯×÷
     /// </summary>
     [JsonProperty("scene_action")]
     public SceneActionBinding SceneAction { get; set; }
     /// <summary>
-    /// å€¼æ ¼å¼åŒ–
+    /// Öµ¸ñÊ½»¯
     /// </summary>
     [JsonProperty("value_format")]
     public int ValueFormat { get; set; }
     /// <summary>
-    /// æ—¶é—´çª—å£
+    /// Ê±¼ä´°¿Ú
     /// </summary>
     public TimeWindow TimeWindow { get; set; }
     /// <summary>
-    /// åˆ›å»ºæ—¶é—´
+    /// ´´½¨Ê±¼ä
     /// </summary>
     [JsonProperty("create_time")]
     public string CreateTime { get; set; }
     /// <summary>
-    /// æ›´æ–°æ—¶é—´
+    /// ¸üĞÂÊ±¼ä
     /// </summary>
     [JsonProperty("update_time")]
     public string UpdateTime { get; set; }
     /// <summary>
-    /// å­id
+    /// ×Óid
     /// </summary>
     [JsonProperty("sub_usIds")]
     public List<string> SubUsIds { get; set; }
     /// <summary>
-    /// æ˜¯å¦ä¸æŠ¥å‘Šæ—¥å¿—
+    /// ÊÇ·ñ²»±¨¸æÈÕÖ¾
     /// </summary>
     [JsonProperty("no_record_log")]
     public bool NoRecordLog { get; set; }
     /// <summary>
-    /// çˆ¶id
+    /// ¸¸id
     /// </summary>
     [JsonProperty("parent_usId")]
     public string ParentUsId { get; set; }
     [JsonProperty("scene_id_v1")]
     public string SceneIdV1 { get; set; }
     /// <summary>
-    /// æˆ¿é—´id
+    /// ·¿¼äid
     /// </summary>
     [JsonProperty("room_id")]
     public string RoomId { get; set; }
     /// <summary>
-    /// é€šç”¨ä½¿ç”¨è¿‡çš„æˆ¿é—´idåˆ—è¡¨
+    /// Í¨ÓÃÊ¹ÓÃ¹ıµÄ·¿¼äidÁĞ±í
     /// </summary>
     [JsonProperty("common_used_roomIds")]
     public List<string> CommonUsedRoomIds { get; set; }
     /// <summary>
-    /// æ ‡ç­¾
+    /// ±êÇ©
     /// </summary>
     public Tags Tags { get; set; }
     /// <summary>
-    /// é™„åŠ ä¿¡æ¯
+    /// ¸½¼ÓĞÅÏ¢
     /// </summary>
-    public string Extra { get; set; }
+    public SceneExtraDto Extra { get; set; }
     /// <summary>
-    /// å›¾æ ‡é“¾æ¥
+    /// Í¼±êÁ´½Ó
     /// </summary>
     [JsonProperty("icon_url")]
     public string IconUrl { get; set; }
     [JsonProperty("enable_consist")]
     public bool EnableConsist { get; set; }
     /// <summary>
-    /// åœºæ™¯ç‰ˆæœ¬
+    /// ³¡¾°°æ±¾
     /// </summary>
     [JsonProperty("scene_version")]
     public int SceneVersion { get; set; }
     /// <summary>
-    /// æ˜¯å¦ä¸ºä¸´æ—¶åœºæ™¯
+    /// ÊÇ·ñÎªÁÙÊ±³¡¾°
     /// </summary>
     public bool Temporary { get; set; }
     /// <summary>
-    /// æ•°æ®ç±»å‹
+    /// Êı¾İÀàĞÍ
     /// </summary>
     [JsonProperty("data_type")]
     public int DataType { get; set; }
     /// <summary>
-    /// é¸¿è’™é¢å¤–ä¿¡æ¯
+    /// ºèÃÉ¶îÍâĞÅÏ¢
     /// </summary>
     [JsonProperty("hm_extra_info")]
     public string HmExtraInfo { get; set; }
 }
 
 /// <summary>
-/// åœºæ™¯ç»‘å®šçš„æ‰€æœ‰è§¦å‘å™¨
+/// ³¡¾°¶îÍâ²¹³ä
+/// </summary>
+public class SceneExtraDto
+{
+    // Identify ÎŞÏÂ»®Ïß£¬±£³Ö²»±ä
+    public string Identify { get; set; }
+
+    // Ô­Ê¼£ºcar_home_id ¡ú ÍÕ·å£ºCarHomeId
+    [JsonProperty("car_home_id")]
+    public string CarHomeId { get; set; }
+
+    // Ô­Ê¼£ºphone_id ¡ú ÍÕ·å£ºPhoneId
+    [JsonProperty("phone_id")]
+    public string PhoneId { get; set; }
+
+    // Ô­Ê¼£ºtv_timewindow ¡ú ÍÕ·å£ºTvTimewindow
+    [JsonProperty("tv_timewindow")]
+    public object TvTimewindow { get; set; }
+
+    // Ô­Ê¼£ºcopy_scene_id ¡ú ÍÕ·å£ºCopySceneId
+    [JsonProperty("copy_scene_id")]
+    public string CopySceneId { get; set; }
+
+    // Ô­Ê¼£ºtemplate_id ¡ú ÍÕ·å£ºTemplateId
+    [JsonProperty("template_id")]
+    public string TemplateId { get; set; }
+
+    // Ô­Ê¼£ºtranslate_from ¡ú ÍÕ·å£ºTranslateFrom
+    [JsonProperty("translate_from")]
+    public string TranslateFrom { get; set; }
+
+    // Ô­Ê¼£ºcar_did ¡ú ÍÕ·å£ºCarDid
+    [JsonProperty("car_did")]
+    public string CarDid { get; set; }
+
+    // Ô­Ê¼£ºlighting_room_id ¡ú ÍÕ·å£ºLightingRoomId
+    [JsonProperty("lighting_room_id")]
+    public string LightingRoomId { get; set; }
+
+    // Ô­Ê¼£ºtimer_type ¡ú ÍÕ·å£ºTimerType
+    [JsonProperty("timer_type")]
+    public string TimerType { get; set; }
+
+    // Ô­Ê¼£ºtemplate_type ¡ú ÍÕ·å£ºTemplateType
+    [JsonProperty("template_type")]
+    public int TemplateType { get; set; }
+}
+
+/// <summary>
+/// ³¡¾°°ó¶¨µÄËùÓĞ´¥·¢Æ÷
 /// </summary>
 public class SceneTriggerBinding
 {
     public int Express { get; set; }
     /// <summary>
-    /// è§¦å‘å™¨
+    /// ´¥·¢Æ÷
     /// </summary>
     public List<Trigger> Triggers { get; set; }
 }
 
 /// <summary>
-/// è§¦å‘å™¨
+/// ´¥·¢Æ÷
 /// </summary>
 public class Trigger
 {
     public int Id { get; set; }
     /// <summary>
-    /// æ’åº
+    /// ÅÅĞò
     /// </summary>
     public int Order { get; set; }
     /// <summary>
-    /// æ¥æº
+    /// À´Ô´
     /// </summary>
     public string Src { get; set; }
     /// <summary>
-    /// ä¸»é”®
+    /// Ö÷¼ü
     /// </summary>
     public string Key { get; set; }
     /// <summary>
-    /// é™„åŠ ä¿¡æ¯
+    /// ¸½¼ÓĞÅÏ¢
     /// </summary>
     public string Extra { get; set; }
     /// <summary>
-    /// åç§°
+    /// Ãû³Æ
     /// </summary>
     public string Name { get; set; }
     /// <summary>
-    /// å€¼
+    /// Öµ
     /// </summary>
     public string Value { get; set; }
     /// <summary>
-    /// å€¼ç±»å‹
+    /// ÖµÀàĞÍ
     /// </summary>
     [JsonProperty("value_type")]
     public int ValueType { get; set; }
     /// <summary>
-    /// é¢å¤–json
+    /// ¶îÍâjson
     /// </summary>
     [JsonProperty("extra_json")]
     public ExtraJson ExtraJson { get; set; }
     /// <summary>
-    /// å€¼json
+    /// Öµjson
     /// </summary>
     [JsonProperty("value_json")]
     public object ValueJson { get; set; }
     /// <summary>
-    /// åè®®ç±»å‹
+    /// Ğ­ÒéÀàĞÍ
     /// </summary>
     [JsonProperty("protocol_type")]
     public int ProtocolType { get; set; }
     [JsonProperty("sc_id")]
     public int ScId { get; set; }
     /// <summary>
-    /// æ¥æº
+    /// À´Ô´
     /// </summary>
     public int From { get; set; }
     /// <summary>
-    /// å€¼æ“ä½œ
+    /// Öµ²Ù×÷
     /// </summary>
     [JsonProperty("value_operation")]
     public int ValueOperation { get; set; }
     /// <summary>
-    /// æ ‡å‡†scid
+    /// ±ê×¼scid
     /// </summary>
     [JsonProperty("std_sc_id")]
     public string StdScId { get; set; }
@@ -242,53 +291,53 @@ public class Trigger
 }
 
 /// <summary>
-/// åœºæ™¯é¢å¤–ä¿¡æ¯
+/// ³¡¾°¶îÍâĞÅÏ¢
 /// </summary>
 public class ExtraJson
 {
     /// <summary>
-    /// è®¾å¤‡åç§°
+    /// Éè±¸Ãû³Æ
     /// </summary>
     [JsonProperty("device_name")]
     public string DeviceName { get; set; }
     /// <summary>
-    /// è®¾å¤‡id
+    /// Éè±¸id
     /// </summary>
     public string Did { get; set; }
     /// <summary>
-    /// è®¾å¤‡å‹å·
+    /// Éè±¸ĞÍºÅ
     /// </summary>
     public string Model { get; set; }
     /// <summary>
-    /// æ—¶åŒº
+    /// Ê±Çø
     /// </summary>
     [JsonProperty("time_zone")]
     public string TimeZone { get; set; }
     /// <summary>
-    /// è¯­éŸ³åˆ«å
+    /// ÓïÒô±ğÃû
     /// </summary>
     [JsonProperty("voice_alias")]
     public VoiceAlias VoiceAlias { get; set; }
 }
 
 /// <summary>
-/// è¯­éŸ³åˆ«å
+/// ÓïÒô±ğÃû
 /// </summary>
 public class VoiceAlias
 {
     /// <summary>
-    /// åˆ«ååˆ—è¡¨
+    /// ±ğÃûÁĞ±í
     /// </summary>
     public List<string> Alias { get; set; }
     /// <summary>
-    /// ä½¿ç”¨åç§°
+    /// Ê¹ÓÃÃû³Æ
     /// </summary>
     [JsonProperty("use_title")]
     public int UseTitle { get; set; }
 }
 
 /// <summary>
-///  åœºæ™¯ç»‘å®šçš„æ‰€æœ‰æ¡ä»¶
+///  ³¡¾°°ó¶¨µÄËùÓĞÌõ¼ş
 /// </summary>
 public class SceneConditionBinding
 {
@@ -297,57 +346,57 @@ public class SceneConditionBinding
 }
 
 /// <summary>
-/// åœºæ™¯ç»‘å®šçš„æ‰€æœ‰åŠ¨ä½œ
+/// ³¡¾°°ó¶¨µÄËùÓĞ¶¯×÷
 /// </summary>
 public class SceneActionBinding
 {
     /// <summary>
-    /// æ¨¡å¼
+    /// Ä£Ê½
     /// </summary>
     public int Mode { get; set; }
     /// <summary>
-    /// åŠ¨ä½œåˆ—è¡¨
+    /// ¶¯×÷ÁĞ±í
     /// </summary>
     public List<SceneAction> Actions { get; set; }
 }
 
 /// <summary>
-/// å®é™…æ‰§è¡Œçš„åŠ¨ä½œ
+/// Êµ¼ÊÖ´ĞĞµÄ¶¯×÷
 /// </summary>
 public class SceneAction
 {
     /// <summary>
-    /// åˆ†ç»„id
+    /// ·Ö×éid
     /// </summary>
     [JsonProperty("group_id")]
     public int GroupId { get; set; }
     /// <summary>
-    /// åŠ¨ä½œid
+    /// ¶¯×÷id
     /// </summary>
     public int Id { get; set; }
     /// <summary>
-    /// åŠ¨ä½œæ’åº
+    /// ¶¯×÷ÅÅĞò
     /// </summary>
     public int Order { get; set; }
     /// <summary>
-    /// åŠ¨ä½œç±»å‹
+    /// ¶¯×÷ÀàĞÍ
     /// </summary>
     public int Type { get; set; }
     /// <summary>
-    /// åŠ¨ä½œåç§°
+    /// ¶¯×÷Ãû³Æ
     /// </summary>
     public string Name { get; set; }
     /// <summary>
-    /// è½½è·
+    /// ÔØºÉ
     /// </summary>
     public string Payload { get; set; }
     /// <summary>
-    /// è½½è·json
+    /// ÔØºÉjson
     /// </summary>
     [JsonProperty("payload_json")]
     public PayloadJson PayloadJson { get; set; }
     /// <summary>
-    /// åè®®ç±»å‹
+    /// Ğ­ÒéÀàĞÍ
     /// </summary>
     [JsonProperty("protocol_type")]
     public int ProtocolType { get; set; }
@@ -357,55 +406,55 @@ public class SceneAction
     [JsonProperty("sa_id")]
     public int SaId { get; set; }
     /// <summary>
-    /// æ¥æº
+    /// À´Ô´
     /// </summary>
     public int From { get; set; }
     /// <summary>
-    /// è®¾å¤‡åˆ†ç»„id
+    /// Éè±¸·Ö×éid
     /// </summary>
     [JsonProperty("device_group_id")]
     public int DeviceGroupId { get; set; }
     /// <summary>
-    /// åµŒå…¥åœºæ™¯çš„ä¿¡æ¯
+    /// Ç¶Èë³¡¾°µÄĞÅÏ¢
     /// </summary>
     [JsonProperty("nested_scene_info")]
     public object NestedSceneInfo { get; set; }
     /// <summary>
-    /// æ ‡å‡†SaId
+    /// ±ê×¼SaId
     /// </summary>
     [JsonProperty("std_sa_id")]
     public string StdSaId { get; set; }
 }
 
 /// <summary>
-/// è½½è·json
+/// ÔØºÉjson
 /// </summary>
 public class PayloadJson
 {
     /// <summary>
-    /// å‘½ä»¤
+    /// ÃüÁî
     /// </summary>
     public string Command { get; set; }
     /// <summary>
-    /// å»¶è¿Ÿæ—¶é—´
+    /// ÑÓ³ÙÊ±¼ä
     /// </summary>
     [JsonProperty("delay_time")]
     public int DelayTime { get; set; }
     /// <summary>
-    /// è®¾å¤‡åç§°
+    /// Éè±¸Ãû³Æ
     /// </summary>
     [JsonProperty("device_name")]
     public string DeviceName { get; set; }
     /// <summary>
-    /// è®¾å¤‡id
+    /// Éè±¸id
     /// </summary>
     public string Did { get; set; }
     /// <summary>
-    /// è®¾å¤‡å‹å·
+    /// Éè±¸ĞÍºÅ
     /// </summary>
     public string Model { get; set; }
     /// <summary>
-    /// çœŸæ­£æ‰§è¡Œçš„å‘½ä»¤çš„å‚æ•°
+    /// ÕæÕıÖ´ĞĞµÄÃüÁîµÄ²ÎÊı
     /// </summary>
     public object Value { get; set; }
 }
@@ -413,23 +462,23 @@ public class PayloadJson
 public class TimeWindow
 {
     /// <summary>
-    /// èµ·å§‹æ—¶é—´
+    /// ÆğÊ¼Ê±¼ä
     /// </summary>
     public string From { get; set; }
     /// <summary>
-    /// ç»“æŸæ—¶é—´
+    /// ½áÊøÊ±¼ä
     /// </summary>
     public string To { get; set; }
     /// <summary>
-    /// è¿‡æ»¤æ¡ä»¶
+    /// ¹ıÂËÌõ¼ş
     /// </summary>
     public string Filter { get; set; }
     /// <summary>
-    /// é™„åŠ ä¿¡æ¯
+    /// ¸½¼ÓĞÅÏ¢
     /// </summary>
     public string Extra { get; set; }
     /// <summary>
-    /// æ—¶åŒº
+    /// Ê±Çø
     /// </summary>
     [JsonProperty("time_zone")]
     public string TimeZone { get; set; }

@@ -1,4 +1,4 @@
-锘縩amespace MiHome.Net.Dto;
+namespace MiHome.Net.Dto;
 
 public class LoginInfoDto
 {
@@ -7,7 +7,7 @@ public class LoginInfoDto
     public string DeviceId { get; set; }
     public string Ssecurity { get; set; }
     /// <summary>
-    /// 杩囨湡鏃堕棿
+    /// 过期时间
     /// </summary>
-    public DateTime? ExpireTime { get; set; }
+    public DateTime ExpireTime { get; set; }
 }
