@@ -368,11 +368,12 @@ public class MIotCloud : IMiotCloud
                         }
                     }
 
-                    if (endDates.Count == 0)
+                    var endDate = DateTime.UtcNow.AddDays(25);
+                    if (endDates.Count > 0)
                     {
-                        throw new Exception("找不到token的过期时间");
+                        endDate = endDates.Max();
                     }
-                    var endDate = endDates.Max();
+
 
                     var serviceToken = cookies.FirstOrDefault(it => it.StartsWith("serviceToken"))
                         ?.Replace("serviceToken=", "");
