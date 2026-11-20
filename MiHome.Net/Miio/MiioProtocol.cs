@@ -29,6 +29,13 @@ public class MiioProtocol
     private Command requestCommand;
 
     private int id;
+
+    /// <summary>
+    /// UDP 接收超时（毫秒）。
+    /// 不设置时 Receive 会无限阻塞：设备离线、丢包或响应慢时，
+    /// 调用线程会一直卡在 socket 上且无法从外部中断。
+    /// </summary>
+    private const int ReceiveTimeoutMilliseconds = 5000;
     /// <summary>
     /// token值的16进制
     /// </summary>
@@ -100,11 +107,7 @@ public class MiioProtocol
         sendCommand.SetData(body);
         
         var sendBytes= sendCommand.Build();
-        var serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        serverSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-        serverSocket.ReceiveTimeout = 5000;
-        //serverSocket.EnableBroadcast = true;
-        //serverSocket.Connect(IPAddress.Parse("192.168.50.141"),54321 );
+        using var serverSocket = CreateSocket();
         var endPoint = new IPEndPoint(this.ipAddress, 54321);
         serverSocket.SendTo(sendBytes, endPoint);
 
@@ -118,6 +121,18 @@ public class MiioProtocol
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// 创建用于本地通信的 UDP socket：开启广播并统一设置接收超时，
+    /// 配合 using 保证每次调用结束后 socket 被释放，不会长期占用句柄。
+    /// </summary>
+    private Socket CreateSocket()
+    {
+        var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+        socket.ReceiveTimeout = ReceiveTimeoutMilliseconds;
+        return socket;
     }
 
     private CommandPayload CreateBody(string command, object parameter = null)
@@ -165,10 +180,9 @@ public class MiioProtocol
     /// <returns></returns>
     private async Task SendHandshake()
     {
-        var serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        serverSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-        //serverSocket.EnableBroadcast = true;
-        //serverSocket.Connect(IPAddress.Parse("192.168.50.141"),54321 );
+        // 握手同样必须有接收超时：设备不应答时立即失败返回，
+        // 否则这里会永久阻塞，调用方只能另起任务，留下无法回收的悬挂线程。
+        using var serverSocket = CreateSocket();
         var endPoint = new IPEndPoint(this.ipAddress, 54321);
         var helloBytes = "21310020ffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
         serverSocket.SendTo(helloBytes, endPoint);
