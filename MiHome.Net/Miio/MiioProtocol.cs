@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using Newtonsoft.Json;
 using SummerBoot.Core;
@@ -109,17 +110,18 @@ public class MiioProtocol
         var sendBytes= sendCommand.Build();
         using var serverSocket = CreateSocket();
         var endPoint = new IPEndPoint(this.ipAddress, 54321);
-        serverSocket.SendTo(sendBytes, endPoint);
-
-        while (true)
+        try
         {
-            byte[] buffer = new byte[4096];
-            var len = serverSocket.Receive(buffer);
-            if (len > 0)
-            {
-                this.requestCommand = Command.Parse(buffer,this.token);
-                return;
-            }
+            serverSocket.SendTo(sendBytes, endPoint);
+            this.requestCommand = ReceiveCommand(serverSocket, 4096);
+        }
+        catch
+        {
+            // 一次收发失败就把"已握手"状态作废：下次调用重新握手。
+            // 否则设备重启、换了 IP、或者路由器重启之后，这里会一直按旧会话发包，
+            // 每次都稳定失败到超时，永远等不到自愈。
+            this.isDiscovered = false;
+            throw;
         }
     }
 
@@ -133,6 +135,51 @@ public class MiioProtocol
         socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
         socket.ReceiveTimeout = ReceiveTimeoutMilliseconds;
         return socket;
+    }
+
+    /// <summary>
+    /// 接收一条来自目标设备的报文。
+    /// 只接受 this.ipAddress 发来的包：局域网里其它设备的广播、心跳会被直接丢弃，
+    /// 既不会被误当成回复，也不会让等待时间被无关报文无限"续命"；
+    /// 解析失败（不完整、格式不符）的报文一律跳过，继续等真正的回复。
+    /// </summary>
+    private Command ReceiveCommand(Socket socket, int bufferSize)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        EndPoint from = new IPEndPoint(IPAddress.Any, 0);
+
+        while (true)
+        {
+            var remain = ReceiveTimeoutMilliseconds - (int)stopwatch.ElapsedMilliseconds;
+            if (remain <= 0)
+            {
+                // 总等待时间到点：即使一直在收无关报文，也不会无限延长
+                throw new SocketException((int)SocketError.TimedOut);
+            }
+            socket.ReceiveTimeout = remain;
+
+            var buffer = new byte[bufferSize];
+            var len = socket.ReceiveFrom(buffer, ref from);
+
+            var remote = from as IPEndPoint;
+            if (remote == null || !remote.Address.Equals(this.ipAddress))
+            {
+                continue;
+            }
+            if (len <= 0)
+            {
+                continue;
+            }
+
+            try
+            {
+                return Command.Parse(buffer, this.token);
+            }
+            catch
+            {
+                continue;
+            }
+        }
     }
 
     private CommandPayload CreateBody(string command, object parameter = null)
@@ -185,17 +232,16 @@ public class MiioProtocol
         using var serverSocket = CreateSocket();
         var endPoint = new IPEndPoint(this.ipAddress, 54321);
         var helloBytes = "21310020ffffffffffffffffffffffffffffffffffffffffffffffffffffffff".HexToBytes();
-        serverSocket.SendTo(helloBytes, endPoint);
-
-        while (true)
+        try
         {
-            byte[] buffer = new byte[1024];
-            var len = serverSocket.Receive(buffer);
-            if (len > 0)
-            {
-                this.requestCommand = Command.Parse(buffer,this.token);
-                return;
-            }
+            serverSocket.SendTo(helloBytes, endPoint);
+            this.requestCommand = ReceiveCommand(serverSocket, 1024);
+        }
+        catch
+        {
+            // 握手失败同样作废状态，保证下一次调用会重新握手而不是沿用半成品
+            this.isDiscovered = false;
+            throw;
         }
     }
 
