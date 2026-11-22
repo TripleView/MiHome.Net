@@ -171,6 +171,19 @@ public class MiioProtocol
                 continue;
             }
 
+            // miIO 报文 = 16 字节头 + 16 字节校验，短于 32 字节的必然是垃圾包；
+            // 长度字段也必须落在 [32, 实收长度] 之间，否则 Parse 会切出错位的数据段
+            // （length = 0 时 Parse 不会抛异常，而是返回一个 Data 为空的 Command）
+            if (len < 32)
+            {
+                continue;
+            }
+            var declaredLength = (buffer[2] << 8) | buffer[3];
+            if (declaredLength < 32 || declaredLength > len)
+            {
+                continue;
+            }
+
             try
             {
                 return Command.Parse(buffer, this.token);
