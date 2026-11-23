@@ -39,39 +39,87 @@ public interface IMiotLocal
 public class MiotLocal : IMiotLocal
 {
  
-    public async Task<CallActionResult> CallActionAsync(string ipAddress, string token,CallActionPayload callActionPayload)
+    public Task<CallActionResult> CallActionAsync(string ipAddress, string token, CallActionPayload callActionPayload)
     {
-        var miioProtocol = new MiioProtocol(ipAddress, token);
-        return await miioProtocol.CallActionAsync(callActionPayload);
+        return CallActionAsync(ipAddress, token, callActionPayload, CancellationToken.None);
     }
 
-    public async Task<GetDeviceInfoResult> GetDeviceInfoAsync(string ipAddress, string token)
+    /// <summary>
+    /// 调用方法，支持取消
+    /// </summary>
+    public async Task<CallActionResult> CallActionAsync(string ipAddress, string token, CallActionPayload callActionPayload, CancellationToken cancellationToken)
     {
         var miioProtocol = new MiioProtocol(ipAddress, token);
-        return await miioProtocol.GetDeviceInfoAsync();
+        return await miioProtocol.CallActionAsync(callActionPayload, cancellationToken);
     }
 
-    public async Task<GetPropertiesResult> GetPropertiesAsync(string ipAddress, string token, List<GetPropertyPayload> propertiesPayloads)
+    public Task<GetDeviceInfoResult> GetDeviceInfoAsync(string ipAddress, string token)
     {
-        var miioProtocol = new MiioProtocol(ipAddress, token);
-        return await miioProtocol.GetPropertiesAsync(propertiesPayloads);
+        return GetDeviceInfoAsync(ipAddress, token, CancellationToken.None);
     }
 
-    public async Task<GetPropertiesResult> GetPropertyAsync(string ipAddress, string token, GetPropertyPayload propertyPayload)
+    /// <summary>
+    /// 获取设备信息，支持取消
+    /// </summary>
+    public async Task<GetDeviceInfoResult> GetDeviceInfoAsync(string ipAddress, string token, CancellationToken cancellationToken)
     {
         var miioProtocol = new MiioProtocol(ipAddress, token);
-        return await miioProtocol.GetPropertiesAsync(new List<GetPropertyPayload>(){ propertyPayload });
+        return await miioProtocol.GetDeviceInfoAsync(cancellationToken);
     }
 
-    public async Task<SetPropertiesResult> SetPropertiesAsync(string ipAddress, string token, List<SetPropertyPayload> propertiesPayloads)
+    public Task<GetPropertiesResult> GetPropertiesAsync(string ipAddress, string token, List<GetPropertyPayload> propertiesPayloads)
     {
-        var miioProtocol = new MiioProtocol(ipAddress, token);
-        return await miioProtocol.SetPropertiesAsync(propertiesPayloads);
+        return GetPropertiesAsync(ipAddress, token, propertiesPayloads, CancellationToken.None);
     }
 
-    public async Task<SetPropertiesResult> SetPropertyAsync(string ipAddress, string token, SetPropertyPayload propertyPayload)
+    /// <summary>
+    /// 批量获取属性，支持取消
+    /// </summary>
+    public async Task<GetPropertiesResult> GetPropertiesAsync(string ipAddress, string token, List<GetPropertyPayload> propertiesPayloads, CancellationToken cancellationToken)
     {
         var miioProtocol = new MiioProtocol(ipAddress, token);
-        return await miioProtocol.SetPropertiesAsync(new List<SetPropertyPayload>(){propertyPayload});
+        return await miioProtocol.GetPropertiesAsync(propertiesPayloads, cancellationToken);
+    }
+
+    public Task<GetPropertiesResult> GetPropertyAsync(string ipAddress, string token, GetPropertyPayload propertyPayload)
+    {
+        return GetPropertyAsync(ipAddress, token, propertyPayload, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 获取单个属性，支持取消
+    /// </summary>
+    public async Task<GetPropertiesResult> GetPropertyAsync(string ipAddress, string token, GetPropertyPayload propertyPayload, CancellationToken cancellationToken)
+    {
+        var miioProtocol = new MiioProtocol(ipAddress, token);
+        return await miioProtocol.GetPropertiesAsync(new List<GetPropertyPayload>() { propertyPayload }, cancellationToken);
+    }
+
+    public Task<SetPropertiesResult> SetPropertiesAsync(string ipAddress, string token, List<SetPropertyPayload> propertiesPayloads)
+    {
+        return SetPropertiesAsync(ipAddress, token, propertiesPayloads, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 批量设置属性，支持取消
+    /// </summary>
+    public async Task<SetPropertiesResult> SetPropertiesAsync(string ipAddress, string token, List<SetPropertyPayload> propertiesPayloads, CancellationToken cancellationToken)
+    {
+        var miioProtocol = new MiioProtocol(ipAddress, token);
+        return await miioProtocol.SetPropertiesAsync(propertiesPayloads, cancellationToken);
+    }
+
+    public Task<SetPropertiesResult> SetPropertyAsync(string ipAddress, string token, SetPropertyPayload propertyPayload)
+    {
+        return SetPropertyAsync(ipAddress, token, propertyPayload, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 设置单个属性，支持取消
+    /// </summary>
+    public async Task<SetPropertiesResult> SetPropertyAsync(string ipAddress, string token, SetPropertyPayload propertyPayload, CancellationToken cancellationToken)
+    {
+        var miioProtocol = new MiioProtocol(ipAddress, token);
+        return await miioProtocol.SetPropertiesAsync(new List<SetPropertyPayload>() { propertyPayload }, cancellationToken);
     }
 }

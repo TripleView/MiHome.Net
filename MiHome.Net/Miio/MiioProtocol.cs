@@ -38,6 +38,12 @@ public class MiioProtocol
     /// </summary>
     private const int ReceiveTimeoutMilliseconds = 5000;
     /// <summary>
+    /// 接收等待的分片长度（毫秒）。
+    /// 阻塞的 Receive 没法从外部直接打断，所以等待拆成小片，
+    /// 片与片之间检查 CancellationToken，取消最迟一个分片（100ms）内生效。
+    /// </summary>
+    private const int ReceiveSliceMilliseconds = 100;
+    /// <summary>
     /// token值的16进制
     /// </summary>
     private byte[] tokenBytes;
@@ -47,10 +53,21 @@ public class MiioProtocol
     /// </summary>
     /// <param name="propertiesPayloads"></param>
     /// <returns></returns>
-    public async Task<GetPropertiesResult> GetPropertiesAsync(List<GetPropertyPayload> propertiesPayloads)
+    public Task<GetPropertiesResult> GetPropertiesAsync(List<GetPropertyPayload> propertiesPayloads)
     {
-        await SendAsync("get_properties", propertiesPayloads);
-        var result= JsonConvert.DeserializeObject<GetPropertiesResult>(this.requestCommand.Data);
+        return GetPropertiesAsync(propertiesPayloads, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 批量获取属性，支持取消
+    /// </summary>
+    /// <param name="propertiesPayloads"></param>
+    /// <param name="cancellationToken">取消后不再等待回复，抛 <see cref="OperationCanceledException"/></param>
+    /// <returns></returns>
+    public async Task<GetPropertiesResult> GetPropertiesAsync(List<GetPropertyPayload> propertiesPayloads, CancellationToken cancellationToken)
+    {
+        await SendAsync("get_properties", propertiesPayloads, cancellationToken);
+        var result = JsonConvert.DeserializeObject<GetPropertiesResult>(this.requestCommand.Data);
         return result;
     }
 
@@ -59,9 +76,20 @@ public class MiioProtocol
     /// </summary>
     /// <param name="propertiesPayloads"></param>
     /// <returns></returns>
-    public async Task<SetPropertiesResult> SetPropertiesAsync(List<SetPropertyPayload> propertiesPayloads)
+    public Task<SetPropertiesResult> SetPropertiesAsync(List<SetPropertyPayload> propertiesPayloads)
     {
-        await SendAsync("set_properties", propertiesPayloads);
+        return SetPropertiesAsync(propertiesPayloads, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 批量设置属性，支持取消
+    /// </summary>
+    /// <param name="propertiesPayloads"></param>
+    /// <param name="cancellationToken">取消后不再等待回复，抛 <see cref="OperationCanceledException"/></param>
+    /// <returns></returns>
+    public async Task<SetPropertiesResult> SetPropertiesAsync(List<SetPropertyPayload> propertiesPayloads, CancellationToken cancellationToken)
+    {
+        await SendAsync("set_properties", propertiesPayloads, cancellationToken);
         var result = JsonConvert.DeserializeObject<SetPropertiesResult>(this.requestCommand.Data);
         return result;
     }
@@ -71,9 +99,20 @@ public class MiioProtocol
     /// </summary>
     /// <param name="callActionPayload"></param>
     /// <returns></returns>
-    public async Task<CallActionResult> CallActionAsync(CallActionPayload callActionPayload)
+    public Task<CallActionResult> CallActionAsync(CallActionPayload callActionPayload)
     {
-        await SendAsync("action", callActionPayload);
+        return CallActionAsync(callActionPayload, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 调用方法，支持取消
+    /// </summary>
+    /// <param name="callActionPayload"></param>
+    /// <param name="cancellationToken">取消后不再等待回复，抛 <see cref="OperationCanceledException"/></param>
+    /// <returns></returns>
+    public async Task<CallActionResult> CallActionAsync(CallActionPayload callActionPayload, CancellationToken cancellationToken)
+    {
+        await SendAsync("action", callActionPayload, cancellationToken);
         var result = JsonConvert.DeserializeObject<CallActionResult>(this.requestCommand.Data);
         return result;
     }
@@ -82,19 +121,29 @@ public class MiioProtocol
     /// 获取设备信息
     /// </summary>
     /// <returns></returns>
-    public async Task<GetDeviceInfoResult> GetDeviceInfoAsync()
+    public Task<GetDeviceInfoResult> GetDeviceInfoAsync()
     {
-        await SendAsync("miIO.info");
+        return GetDeviceInfoAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 获取设备信息，支持取消
+    /// </summary>
+    /// <param name="cancellationToken">取消后不再等待回复，抛 <see cref="OperationCanceledException"/></param>
+    /// <returns></returns>
+    public async Task<GetDeviceInfoResult> GetDeviceInfoAsync(CancellationToken cancellationToken)
+    {
+        await SendAsync("miIO.info", null, cancellationToken);
         var result = JsonConvert.DeserializeObject<GetDeviceInfoResult>(this.requestCommand.Data);
         return result;
         
     }
 
-    private async Task SendAsync(string command, object parameter =null)
+    private async Task SendAsync(string command, object parameter, CancellationToken cancellationToken)
     {
         if (!this.isDiscovered)
         {
-            await this.SendHandshake();
+            await this.SendHandshake(cancellationToken);
             this.isDiscovered = true;
         }
         var body = CreateBody(command, parameter);
@@ -113,7 +162,7 @@ public class MiioProtocol
         try
         {
             serverSocket.SendTo(sendBytes, endPoint);
-            this.requestCommand = ReceiveCommand(serverSocket, 4096);
+            this.requestCommand = ReceiveCommand(serverSocket, 4096, cancellationToken);
         }
         catch
         {
@@ -145,21 +194,45 @@ public class MiioProtocol
     /// </summary>
     private Command ReceiveCommand(Socket socket, int bufferSize)
     {
+        return ReceiveCommand(socket, bufferSize, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 同上，额外支持取消。
+    /// 阻塞的 Receive 无法被外部打断，所以按 ReceiveSliceMilliseconds 分片等待，
+    /// 每一片之间检查取消信号；未取消时行为和不带参数的版本一致，
+    /// 总等待超过 ReceiveTimeoutMilliseconds 仍然抛 SocketException(TimedOut)。
+    /// </summary>
+    private Command ReceiveCommand(Socket socket, int bufferSize, CancellationToken cancellationToken)
+    {
         var stopwatch = Stopwatch.StartNew();
         EndPoint from = new IPEndPoint(IPAddress.Any, 0);
 
         while (true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var remain = ReceiveTimeoutMilliseconds - (int)stopwatch.ElapsedMilliseconds;
             if (remain <= 0)
             {
                 // 总等待时间到点：即使一直在收无关报文，也不会无限延长
                 throw new SocketException((int)SocketError.TimedOut);
             }
-            socket.ReceiveTimeout = remain;
+
+            // 分片等待，让取消能在一片之内生效
+            socket.ReceiveTimeout = Math.Min(remain, ReceiveSliceMilliseconds);
 
             var buffer = new byte[bufferSize];
-            var len = socket.ReceiveFrom(buffer, ref from);
+            int len;
+            try
+            {
+                len = socket.ReceiveFrom(buffer, ref from);
+            }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
+            {
+                // 这一片只是暂时没数据，回到循环顶部重新判断总超时和取消
+                continue;
+            }
 
             var remote = from as IPEndPoint;
             if (remote == null || !remote.Address.Equals(this.ipAddress))
@@ -238,7 +311,7 @@ public class MiioProtocol
     /// 发送握手包
     /// </summary>
     /// <returns></returns>
-    private async Task SendHandshake()
+    private async Task SendHandshake(CancellationToken cancellationToken)
     {
         // 握手同样必须有接收超时：设备不应答时立即失败返回，
         // 否则这里会永久阻塞，调用方只能另起任务，留下无法回收的悬挂线程。
@@ -248,7 +321,7 @@ public class MiioProtocol
         try
         {
             serverSocket.SendTo(helloBytes, endPoint);
-            this.requestCommand = ReceiveCommand(serverSocket, 1024);
+            this.requestCommand = ReceiveCommand(serverSocket, 1024, cancellationToken);
         }
         catch
         {
