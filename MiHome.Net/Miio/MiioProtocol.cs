@@ -38,6 +38,12 @@ public class MiioProtocol
     /// </summary>
     private const int ReceiveTimeoutMilliseconds = 5000;
     /// <summary>
+    /// 诊断回调，默认 null（不输出任何内容）。
+    /// 用来排查"设备明明在线却一直超时"：能区分"丢了多少非目标设备的报文"和"收到但解析失败"。
+    /// 回调在调用线程上触发，UI 场景请自行切回主线程；回调内部抛的异常会被吞掉，不影响协议本身。
+    /// </summary>
+    public static Action<string>? Trace { get; set; }
+    /// <summary>
     /// 接收等待的分片长度（毫秒）。
     /// 阻塞的 Receive 没法从外部直接打断，所以等待拆成小片，
     /// 片与片之间检查 CancellationToken，取消最迟一个分片（100ms）内生效。
@@ -164,13 +170,35 @@ public class MiioProtocol
             serverSocket.SendTo(sendBytes, endPoint);
             this.requestCommand = ReceiveCommand(serverSocket, 4096, cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
             // 一次收发失败就把"已握手"状态作废：下次调用重新握手。
             // 否则设备重启、换了 IP、或者路由器重启之后，这里会一直按旧会话发包，
             // 每次都稳定失败到超时，永远等不到自愈。
+            WriteTrace($"收发失败，握手状态复位: {ex.Message}");
             this.isDiscovered = false;
             throw;
+        }
+    }
+
+    /// <summary>
+    /// 输出一条诊断信息。回调为空时零开销，回调抛异常时也不会影响协议本身。
+    /// </summary>
+    private void WriteTrace(string message)
+    {
+        var callback = Trace;
+        if (callback == null)
+        {
+            return;
+        }
+
+        try
+        {
+            callback($"[miio {this.ipAddress}] {message}");
+        }
+        catch
+        {
+            // 诊断输出永远不能把功能搞挂
         }
     }
 
@@ -237,10 +265,12 @@ public class MiioProtocol
             var remote = from as IPEndPoint;
             if (remote == null || !remote.Address.Equals(this.ipAddress))
             {
+                WriteTrace($"丢弃非目标设备报文: {from}");
                 continue;
             }
             if (len <= 0)
             {
+                WriteTrace("忽略空报文");
                 continue;
             }
 
@@ -249,11 +279,13 @@ public class MiioProtocol
             // （length = 0 时 Parse 不会抛异常，而是返回一个 Data 为空的 Command）
             if (len < 32)
             {
+                WriteTrace($"报文过短，已跳过: {len} 字节");
                 continue;
             }
             var declaredLength = (buffer[2] << 8) | buffer[3];
             if (declaredLength < 32 || declaredLength > len)
             {
+                WriteTrace($"报文长度字段非法，已跳过: 实收 {len} 字节，声明 {declaredLength} 字节");
                 continue;
             }
 
@@ -261,8 +293,9 @@ public class MiioProtocol
             {
                 return Command.Parse(buffer, this.token);
             }
-            catch
+            catch (Exception ex)
             {
+                WriteTrace($"报文解析失败，已跳过: {ex.Message}");
                 continue;
             }
         }
@@ -323,9 +356,10 @@ public class MiioProtocol
             serverSocket.SendTo(helloBytes, endPoint);
             this.requestCommand = ReceiveCommand(serverSocket, 1024, cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
             // 握手失败同样作废状态，保证下一次调用会重新握手而不是沿用半成品
+            WriteTrace($"握手失败，握手状态复位: {ex.Message}");
             this.isDiscovered = false;
             throw;
         }
